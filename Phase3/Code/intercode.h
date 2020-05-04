@@ -1,0 +1,105 @@
+#ifndef _INTERCODE_H_
+#define _INTERCODE_H_
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "semantic.h"
+
+typedef enum {LABEL_IC, FUNCTION_IC, ASSIGN, PLUS, SUB, MUL, DIV, GETADDR, RIGHTSTAR, LEFTSTAR, 
+              GOTO, RELOPGOTO, RETURN, DEC, ARG, CALL, PARAM, READ, WRITE} InterCodeKind;
+
+typedef enum {TEMP_VARIABLE, VARIABLE, CONSTANT, TEMP_ADDRESS, ADDRESS, LABEL_OP, FUNCTION_OP, DEFAULT} OperandKind;
+
+typedef struct Operand
+{
+    OperandKind kind;
+    union {
+        int constant_value;
+        char contents[33];
+        struct Operand *addr;
+    } opinfo;
+
+} Operand;
+
+typedef struct InterCode
+{
+    InterCodeKind kind;
+    union {
+        struct {
+            struct Operand *op;
+        } singleop;
+        struct {
+            struct Operand *op1; //left
+            struct Operand *op2; //right
+        } doubleop; // op1 = op2
+        struct {
+            struct Operand *op;
+            struct Operand *op1;
+            struct Operand *op2;
+        } tripleop; // op = op1 + op2
+        struct {
+            struct Operand *x;
+            struct Operand *y;
+            struct Operand *z;
+            char relop[33];
+        } relopgoto; // if x relop y goto z
+        struct {
+            struct Operand *op;
+            int size;
+        } dec;
+    } codeinfo;
+
+    struct InterCode *previous;
+    struct InterCode *next;
+
+} InterCode;
+
+struct InterCode *listhead;
+struct InterCode *listtail;
+
+int label_no;
+int tempvar_no;
+
+//supplement tool function
+void initialize();
+void insertintercode(InterCode *intercode);
+Operand* newOperand(OperandKind kind);
+Operand* copyLabel(Operand *label);
+int calculatesize(TypeInfo *type);
+
+//generating intercode function
+void generate_intercode(TreeNode *root);
+void extdeflist_intercode(TreeNode *p);
+void extdef_intercode(TreeNode *p);
+void fundec_intercode(TreeNode *p);
+void compst_intercode(TreeNode *p);
+void varlist_intercode(TreeNode *p);
+void paramdec_intercode(TreeNode *p);
+void funcvardec_intercode(TreeNode *p);
+void funcdeflist_intercode(TreeNode *p);
+void stmtlist_intercode(TreeNode *p);
+void funcdef_intercode(TreeNode *p);
+void funcdeclist_intercode(TreeNode *p);
+void funcdec_intercode(TreeNode *p);
+void vardec_intercode(TreeNode *p);
+void exp_intercode(TreeNode *p, Operand *op);
+void stmt_intercode(TreeNode *p);
+void cond_intercode(TreeNode *p, Operand *label_true, Operand *label_false);
+void expid_intercode(TreeNode *p, Operand *op);
+void expint_intercode(TreeNode *p, Operand *op);
+void minusexp_intercode(TreeNode *p, Operand *op);
+void notexp_intercode(TreeNode *p, Operand *op);
+void callfunc_intercode(TreeNode *p, Operand *op);
+void expassignop_intercode(TreeNode *p, Operand *op);
+void expandor_intercode(TreeNode *p, Operand *op);
+void callstruct_intercode(TreeNode *p, Operand *op);
+void exprelop_intercode(TreeNode *p, Operand *op);
+void expcalculate_intercode(TreeNode *p, Operand *op);
+void callarray_intercode(TreeNode *p, Operand *op);
+
+#endif
+
+
+
+// InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+// Operand *operand = (Operand*)malloc(sizeof(Operand));
