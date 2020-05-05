@@ -54,6 +54,12 @@ typedef struct InterCode
 
 } InterCode;
 
+typedef struct Args
+{
+	Operand *one_arg;
+	Args *next;
+}Args;
+
 struct InterCode *listhead;
 struct InterCode *listtail;
 
@@ -88,12 +94,11 @@ void cond_intercode(TreeNode *p, Operand *label_true, Operand *label_false);
 void expid_intercode(TreeNode *p, Operand *op);
 void expint_intercode(TreeNode *p, Operand *op);
 void minusexp_intercode(TreeNode *p, Operand *op);
-void notexp_intercode(TreeNode *p, Operand *op);
+void boolexp_intercode(TreeNode *p, Operand *op);
 void callfunc_intercode(TreeNode *p, Operand *op);
+Args *arg_intercode(TreeNode *p);
 void expassignop_intercode(TreeNode *p, Operand *op);
-void expandor_intercode(TreeNode *p, Operand *op);
 void callstruct_intercode(TreeNode *p, Operand *op);
-void exprelop_intercode(TreeNode *p, Operand *op);
 void expcalculate_intercode(TreeNode *p, Operand *op);
 void callarray_intercode(TreeNode *p, Operand *op);
 

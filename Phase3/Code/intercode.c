@@ -572,7 +572,7 @@ void exp_intercode(TreeNode *p, Operand *op)
 		if (strcmp(p->children[0]->type, "MINUS") == 0)
 			return minusexp_intercode(p, op);
 		else
-			return notexp_intercode(p, op);
+			return boolexp_intercode(p, op);
 	}
 	else if(p->childrennum == 3)
 	{
@@ -585,11 +585,11 @@ void exp_intercode(TreeNode *p, Operand *op)
 			if (strcmp(p->children[1]->type, "ASSIGNOP") == 0)
 				return expassignop_intercode(p, op);
 			else if (strcmp(p->children[0]->type, "AND") == 0 || strcmp(p->children[0]->type, "OR") == 0)
-				return expandor_intercode(p, op);
+				return boolexp_intercode(p, op);
 			else if (strcmp(p->children[1]->type, "DOT") == 0)
 				return callstruct_intercode(p, op);
 			else if (strcmp(p->children[1]->type, "RELOP") == 0)
-				return exprelop_intercode(p, op);
+				return boolexp_intercode(p, op);
 			else //PLUS, MINUS, STAR, DIV
 				return expcalculate_intercode(p, op);
 		}
@@ -627,4 +627,221 @@ void expint_intercode(TreeNode *p, Operand *op)
     op->opinfo.constant_value = atoi(p->children[0]->contents);
     if(printnode_intercode == 1)
         printf("leave expint_intercode\n");
+}
+
+void minusexp_intercode(TreeNode *p, Operand *op)
+{
+    if(printnode_intercode == 1)
+        printf("enter minusexp_intercode\n");
+    Operand *tempvar = newOperand(TEMP_VARIABLE);
+    //code1
+    exp_intercode(p->children[1],tempvar);
+    //code2
+    InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+    intercode->kind = SUB;
+    Operand *constant = (Operand*)malloc(sizeof(Operand));
+    constant->kind = CONSTANT;
+    constant->opinfo.constant_value = 0;
+    intercode->codeinfo.tripleop.op1=constant;
+    intercode->codeinfo.tripleop.op2=tempvar;
+    intercode->codeinfo.tripleop.op=op;
+    insertintercode(intercode);
+    if(printnode_intercode == 1)
+        printf("leave minusexp_intercode\n");
+}
+
+void boolexp_intercode(TreeNode *p, Operand *op)//NOT AND OR RELOP
+{
+	if(printnode_intercode == 1)
+        	printf("enter boolexp_intercode\n");
+    	Operand *label1 = newOperand(LABEL_OP);
+        Operand *label2 = newOperand(LABEL_OP);
+	Operand *constant_zero = (Operand*)malloc(sizeof(Operand));
+    	constant_zero->kind = CONSTANT;
+    	constant_zero->opinfo.constant_value = 0;
+	//code0
+	InterCode *intercode0 = (InterCode*)malloc(sizeof(InterCode));
+    	intercode0->kind = ASSIGN;
+	intercode0->codeinfo.doubleop.op1=op;
+	intercode0->codeinfo.doubleop.op2=constant_zero;
+	insertintercode(intercode0);
+	//code1
+	cond_intercode(p,label1,label2);
+	//LABEL label1
+	InterCode *interlabel1 = (InterCode*)malloc(sizeof(InterCode));
+        interlabel1->kind=LABEL_IC;
+        interlabel1->codeinfo.singleop.op=label1;
+        insertintercode(interlabel1);
+	//code2
+	Operand *constant_one = (Operand*)malloc(sizeof(Operand));
+    	constant_one->kind = CONSTANT;
+    	constant_one->opinfo.constant_value = 1;
+	InterCode *intercode2 = (InterCode*)malloc(sizeof(InterCode));
+    	intercode2->kind = ASSIGN;
+	intercode2->codeinfo.doubleop.op1=op;
+	intercode2->codeinfo.doubleop.op2=constant_one;
+	insertintercode(intercode0);
+	//LABEL label2
+	InterCode *interlabel2 = (InterCode*)malloc(sizeof(InterCode));
+        interlabel2->kind=LABEL_IC;
+        interlabel2->codeinfo.singleop.op=label2;
+        insertintercode(interlabel2);
+	if(printnode_intercode == 1)
+        	printf("leave boolexp_intercode\n");
+}
+
+void callfunc_intercode(TreeNode *p, Operand *op)
+{
+	if(printnode_intercode == 1)
+        	printf("enter callfunc_intercode\n");
+	int ret1 = checksymbol(p->children[0]->contents, 1);
+	if(ret1==0)
+		return;
+	else
+	{
+		if(p->childrennum == 3)//ID LP RP
+		{
+			if(strcmp(p->children[0]->contents,"read")==0)
+			{
+				InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+    				intercode->kind = READ;
+				intercode->codeinfo.singleop.op=op;
+				insertintercode(intercode);
+			
+			}
+			else
+			{
+				Operand *fun = (Operand*)malloc(sizeof(Operand));
+				fun->kind=FUNCTION_OP;
+				strcpy(fun->opinfo.contents,p->children[0]->contents);
+				InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+    				intercode->kind = CALL;
+				intercode->codeinfo.doubleop.op1=op;
+				intercode->codeinfo.doubleop.op2=fun;
+				insertintercode(intercode);
+			}
+		}
+		else//ID LP Args RP
+		{
+			Args *args=(Args*)malloc(sizeof(Args));
+			//code1
+			args=arg_intercode(p->children[2]);
+			if(strcmp(p->children[0]->contents,"write")==0)
+			{
+				InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+    				intercode->kind = WRITE;
+				intercode->codeinfo.singleop.op=args->one_arg;
+				insertintercode(intercode);
+			}	
+			else
+			{
+				while(args!=NULL)
+				{
+					InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+					intercode->kind=ARG;
+					intercode->codeinfo.singleop.op=args->one_arg;
+					insertintercode(intercode);
+					args=args->next;
+
+				}
+				Operand *fun = (Operand*)malloc(sizeof(Operand));
+				fun->kind=FUNCTION_OP;
+				strcpy(fun->opinfo.contents,p->children[0]->contents);
+				InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+    				intercode->kind = CALL;
+				intercode->codeinfo.doubleop.op1=op;
+				intercode->codeinfo.doubleop.op2=fun;
+				insertintercode(intercode);
+			}		
+			
+		}
+	}
+	if(printnode_intercode == 1)
+        	printf("leave callfunc_intercode\n");
+
+}
+
+Args *arg_intercode(TreeNode *p)
+{
+	if(printnode_intercode == 1)
+        	printf("enter arg_intercode\n");
+	Args *args=NULL;
+	while(p->childrennum != 1)
+	{
+		Operand *tempvar = newOperand(TEMP_VARIABLE);
+		exp_intercode(p->children[0],tempvar);
+		TypeInfo *type = Exp(q->children[0]);
+		if(type->kind=STRUCT)
+		{
+			tempvar->kind=ADDRESS;
+		}
+		Args *arg=(Args*)malloc(sizeof(Args));
+		arg->one_arg=tempvar;
+		arg->next=args;
+		args=arg;
+		p=p->children[2];
+	}
+	Operand *tempvar = newOperand(TEMP_VARIABLE);
+	exp_intercode(p->children[0],tempvar);
+	TypeInfo *type = Exp(q->children[0]);
+	if(type->kind=STRUCT)
+	{
+		tempvar->kind=ADDRESS;
+	}
+	Args *arg=(Args*)malloc(sizeof(Args));
+	arg->one_arg=tempvar;
+	arg->next=args;
+	args=arg;
+	return args;
+	if(printnode_intercode == 1)
+        	printf("leave arg_intercode\n");
+}
+
+void expassignop_intercode(TreeNode *p, Operand *op)
+{
+	if(printnode_intercode == 1)
+        	printf("enter expassignop_intercode\n");
+	Operand *tempvar1 = newOperand(TEMP_VARIABLE);
+	expid_intercode(p->children[0],tempvar1);
+	//code1
+	Operand *tempvar2 = newOperand(TEMP_VARIABLE);
+	exp_intercode(p->children[2],tempvar);
+	//code2 [variable.name:=t1]
+	InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+    	intercode->kind = ASSIGN;
+	intercode->codeinfo.doubleop.op1=tempvar1;
+	intercode->codeinfo.doubleop.op2=tempvar2;
+	insertintercode(intercode);
+	//code2 [place:=variable.name]
+	op.kind=tempvar1.kind;
+	strcpy(op.contents,tempvar1.contents);
+	if(printnode_intercode == 1)
+        	printf("leave expassignop_intercode\n");
+}
+
+void expcalculate_intercode(TreeNode *p, Operand *op)
+{
+	if(printnode_intercode == 1)
+        	printf("enter expcalculate_intercode\n");
+	Operand *tempvar1 = newOperand(TEMP_VARIABLE);
+	Operand *tempvar2 = newOperand(TEMP_VARIABLE);
+	//code1
+	exp_intercode(p->children[0],tempvar1);
+	//code2
+	exp_intercode(p->children[2],tempvar);
+	InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+	if(strcmp(p->children[1]->type,"PLUS")==0)
+		intercode.kind=PLUS;
+	else if(strcmp(p->children[1]->type,"SUB")==0)
+		intercode.kind=SUB;
+	else if(strcmp(p->children[1]->type,"STAR")==0)
+		intercode.kind=MUL;
+	else if(strcmp(p->children[1]->type,"DIV")==0)
+		intercode.kind=DIV;
+	intercode.codeinfo.op=op;
+	intercode.codeinfo.op1=tempvar1;
+	intercode.codeinfo.op2=tempvar2;
+	insertintercode(intercode);
+	if(printnode_intercode == 1)
+        	printf("leave expcalculate_intercode\n");
 }
