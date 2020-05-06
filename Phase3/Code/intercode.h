@@ -79,7 +79,7 @@ void initialize();
 void insertintercode(InterCode *intercode);
 Operand* newOperand(OperandKind kind);
 Operand* copyLabel(Operand *label);
-Operand* copyOp(Operand *op);
+Operand* copyOperand(Operand *op);
 int calculatesize(TypeInfo *type);
 void insertparalist(char name[33]);
 int structisparameter(char name[33]);
