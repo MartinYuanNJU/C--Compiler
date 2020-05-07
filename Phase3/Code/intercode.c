@@ -38,7 +38,7 @@ Operand* newOperand(OperandKind kind)
     if(kind == TEMP_VARIABLE)
     {
         char contents[33];
-        strcpy(contents, "__TEMPVAR");
+        strcpy(contents, "TEMPVAR");
         char number[33];
         sprintf(number, "%d", tempvar_no);
         strcat(contents, number);
@@ -49,7 +49,7 @@ Operand* newOperand(OperandKind kind)
     else if(kind == LABEL_OP)
     {
         char contents[33];
-        strcpy(contents, "__LABEL");
+        strcpy(contents, "LABEL");
         char number[33];
         sprintf(number, "%d", label_no);
         strcat(contents, number);
@@ -132,121 +132,121 @@ void clearparalist()
     }
 }
 
-void printOperand(Operand *op)
+void printOperand(Operand *op, FILE *fp)
 {
     if(op->kind == CONSTANT)
-        printf("#%d",op->opinfo.constant_value);
+        fprintf(fp, "#%d",op->opinfo.constant_value);
     else if(op->kind == TEMP_ADDRESS || op->kind == ADDRESS)
-        printf("&%s",op->opinfo.contents);
+        fprintf(fp,"&%s",op->opinfo.contents);
     else if(op->kind == STAR)
-        printf("*%s",op->opinfo.contents);
+        fprintf(fp, "*%s",op->opinfo.contents);
     else
-        printf("%s",op->opinfo.contents);
+        fprintf(fp, "%s",op->opinfo.contents);
 }
 
-void printIntercode(InterCode *head)
+void printIntercode(InterCode *head, FILE *fp)
 {
     for(InterCode *p=head; p!=NULL; p=p->next)
     {
         if(p->kind == LABEL_IC)
-            printf("LABEL %s :", p->codeinfo.singleop.op->opinfo.contents);
+            fprintf(fp, "LABEL %s :", p->codeinfo.singleop.op->opinfo.contents);
         else if(p->kind == FUNCTION_IC)
-            printf("FUNCTION %s :", p->codeinfo.singleop.op->opinfo.contents);
+            fprintf(fp, "FUNCTION %s :", p->codeinfo.singleop.op->opinfo.contents);
         else if(p->kind == ASSIGN)
         {
-            printOperand(p->codeinfo.doubleop.op1);
-            printf(" := ");
-            printOperand(p->codeinfo.doubleop.op2);
+            printOperand(p->codeinfo.doubleop.op1, fp);
+            fprintf(fp, " := ");
+            printOperand(p->codeinfo.doubleop.op2, fp);
         }
         else if(p->kind == PLUS)
         {
-            printOperand(p->codeinfo.tripleop.op);
-            printf(" := ");
-            printOperand(p->codeinfo.tripleop.op1);
-            printf(" + ");
-            printOperand(p->codeinfo.tripleop.op2);
+            printOperand(p->codeinfo.tripleop.op, fp);
+            fprintf(fp, " := ");
+            printOperand(p->codeinfo.tripleop.op1, fp);
+            fprintf(fp, " + ");
+            printOperand(p->codeinfo.tripleop.op2, fp);
         }
         else if(p->kind == SUB)
         {
-            printOperand(p->codeinfo.tripleop.op);
-            printf(" := ");
-            printOperand(p->codeinfo.tripleop.op1);
-            printf(" - ");
-            printOperand(p->codeinfo.tripleop.op2);
+            printOperand(p->codeinfo.tripleop.op, fp);
+            fprintf(fp, " := ");
+            printOperand(p->codeinfo.tripleop.op1, fp);
+            fprintf(fp, " - ");
+            printOperand(p->codeinfo.tripleop.op2, fp);
         }
         else if(p->kind == MUL)
         {
-            printOperand(p->codeinfo.tripleop.op);
-            printf(" := ");
-            printOperand(p->codeinfo.tripleop.op1);
-            printf(" * ");
-            printOperand(p->codeinfo.tripleop.op2);
+            printOperand(p->codeinfo.tripleop.op, fp);
+            fprintf(fp, " := ");
+            printOperand(p->codeinfo.tripleop.op1, fp);
+            fprintf(fp, " * ");
+            printOperand(p->codeinfo.tripleop.op2, fp);
         }
         else if(p->kind == DIV)
         {
-            printOperand(p->codeinfo.tripleop.op);
-            printf(" := ");
-            printOperand(p->codeinfo.tripleop.op1);
-            printf(" / ");
-            printOperand(p->codeinfo.tripleop.op2);
+            printOperand(p->codeinfo.tripleop.op, fp);
+            fprintf(fp, " := ");
+            printOperand(p->codeinfo.tripleop.op1, fp);
+            fprintf(fp, " / ");
+            printOperand(p->codeinfo.tripleop.op2, fp);
         }
         else if(p->kind == GOTO)
         {
-            printf("GOTO ");
-            printOperand(p->codeinfo.singleop.op);
+            fprintf(fp, "GOTO ");
+            printOperand(p->codeinfo.singleop.op, fp);
         }
         else if(p->kind == RELOPGOTO)
         {
-            printf("IF ");
-            printOperand(p->codeinfo.relopgoto.x);
-            printf(" %s ",p->codeinfo.relopgoto.relop);
-            printOperand(p->codeinfo.relopgoto.y);
-            printf(" GOTO ");
-            printOperand(p->codeinfo.relopgoto.z);
+            fprintf(fp, "IF ");
+            printOperand(p->codeinfo.relopgoto.x, fp);
+            fprintf(fp, " %s ",p->codeinfo.relopgoto.relop);
+            printOperand(p->codeinfo.relopgoto.y, fp);
+            fprintf(fp, " GOTO ");
+            printOperand(p->codeinfo.relopgoto.z, fp);
         }
         else if(p->kind == RETURN)
         {
-            printf("RETURN ");
-            printOperand(p->codeinfo.singleop.op);
+            fprintf(fp, "RETURN ");
+            printOperand(p->codeinfo.singleop.op, fp);
         }
         else if(p->kind == DEC)
         {
-            printf("DEC ");
-            printOperand(p->codeinfo.dec.op);
-            printf(" %d", p->codeinfo.dec.size);
+            fprintf(fp, "DEC ");
+            printOperand(p->codeinfo.dec.op, fp);
+            fprintf(fp, " %d", p->codeinfo.dec.size);
         }
         else if(p->kind == ARG)
         {
-            printf("ARG ");
-            printOperand(p->codeinfo.singleop.op);
+            fprintf(fp, "ARG ");
+            printOperand(p->codeinfo.singleop.op, fp);
         }
         else if(p->kind == CALL)
         {
-            printOperand(p->codeinfo.doubleop.op1);
-            printf(" := CALL ");
-            printOperand(p->codeinfo.doubleop.op2);
+            printOperand(p->codeinfo.doubleop.op1, fp);
+            fprintf(fp, " := CALL ");
+            printOperand(p->codeinfo.doubleop.op2, fp);
         }
         else if(p->kind == PARAM)
         {
-            printf("PARAM ");
-            printOperand(p->codeinfo.singleop.op);
+            fprintf(fp, "PARAM ");
+            printOperand(p->codeinfo.singleop.op, fp);
         }
         else if(p->kind == READ)
         {
-            printf("READ ");
-            printOperand(p->codeinfo.singleop.op);
+            fprintf(fp, "READ ");
+            printOperand(p->codeinfo.singleop.op, fp);
         }
         else if(p->kind == WRITE)
         {
-            printf("WRITE ");
-            printOperand(p->codeinfo.singleop.op);
+            fprintf(fp, "WRITE ");
+            printOperand(p->codeinfo.singleop.op, fp);
         }
-        printf("\n");
+        fprintf(fp, "\n");
     }
 }
 
 //generating intercode
-void generate_intercode(TreeNode *root)
+void generate_intercode(TreeNode *root, FILE *fp)
 {
     if(errorsum != 0)
         return;
@@ -254,7 +254,8 @@ void generate_intercode(TreeNode *root)
         return;
     initialize();
     extdeflist_intercode(root->children[0]);
-    printIntercode(listhead);
+	if(errorsum == 0)
+    	printIntercode(listhead, fp);
 }
 
 void extdeflist_intercode(TreeNode *p)
@@ -319,8 +320,9 @@ void funcvardec_intercode(TreeNode *p)
         printf("enter funcvardec_intercode\n");
     if(p->childrennum > 1)
     {
+        if(errorsum == 0)
+            printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
         errorsum++;
-        printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
     }
     else
     {
@@ -401,8 +403,9 @@ void funcdec_intercode(TreeNode *p)
     {
         if(p->children[0]->childrennum > 1) //initialize array
         {
+            if(errorsum == 0)
+                printf("Cannot translate: Try to initialize array at line %d.\n", p->children[0]->linenumber);
             errorsum++;
-            printf("Cannot translate: Try to initialize array at line %d.\n", p->children[0]->linenumber);
         }
         else
         {
@@ -450,8 +453,9 @@ void vardec_intercode(TreeNode *p)
     {
         if(p->children[0]->childrennum > 1)
         {
+            if(errorsum == 0)
+                printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
             errorsum++;
-            printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
         }
         else
         {
@@ -492,8 +496,9 @@ void stmt_intercode(TreeNode *p)
 		compst_intercode(p->children[0]);
 	else if(p->childrennum == 2) //Exp SEMI
     {
-        Operand *operand = (Operand*)malloc(sizeof(Operand));
-        operand->kind = DEFAULT;
+        // Operand *operand = (Operand*)malloc(sizeof(Operand));
+        // operand->kind = DEFAULT;
+        Operand *operand = newOperand(TEMP_VARIABLE);
         exp_intercode(p->children[0], operand);
     }
 	else if(p->childrennum == 3) //RETURN Exp SEMI
@@ -813,7 +818,7 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 	if(printnode_intercode == 1)
         printf("enter expassignop_intercode\n");
 	Operand *tempvar1 = newOperand(TEMP_VARIABLE);
-	expid_intercode(p->children[0],tempvar1);
+	exp_intercode(p->children[0],tempvar1);
 	//code1
 	Operand *tempvar2 = newOperand(TEMP_VARIABLE);
 	exp_intercode(p->children[2],tempvar2);
@@ -928,7 +933,7 @@ void callstruct_intercode(TreeNode *p, Operand *op) //Exp DOT ID
     FieldList *list = type->info.structure;
     while(list != NULL)
     {
-        if(strcpy(list->name, p->children[2]->contents)==0)
+        if(strcmp(list->name, p->children[2]->contents)==0)
             break;
         else
         {
@@ -939,11 +944,11 @@ void callstruct_intercode(TreeNode *p, Operand *op) //Exp DOT ID
 
     if(exp1->kind == STAR)
         exp1->kind = VARIABLE;
-    else if(structisparameter(p->children[2]->contents)==1)
-        exp1->kind = VARIABLE;
+    else if(exp1->kind != CONSTANT && structisparameter(exp1->opinfo.contents) == 1)
+        exp1->kind = VARIABLE;  
     else
         exp1->kind = ADDRESS;
-
+    
     Operand *operand = copyOperand(op);
     operand->kind = TEMP_VARIABLE;
     InterCode *caladdr = (InterCode*)malloc(sizeof(InterCode));
@@ -970,13 +975,14 @@ void callfunc_intercode(TreeNode *p, Operand *op)
 		return;
 	else
 	{
+        Operand *copyop = copyOperand(op);
 		if(p->childrennum == 3)//ID LP RP
 		{
 			if(strcmp(p->children[0]->contents,"read")==0)
 			{
 				InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
     			intercode->kind = READ;
-				intercode->codeinfo.singleop.op = op;
+				intercode->codeinfo.singleop.op = copyop;
 				insertintercode(intercode);
 			
 			}
@@ -987,7 +993,7 @@ void callfunc_intercode(TreeNode *p, Operand *op)
 				strcpy(fun->opinfo.contents,p->children[0]->contents);
 				InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
     			intercode->kind = CALL;
-				intercode->codeinfo.doubleop.op1=op;
+				intercode->codeinfo.doubleop.op1=copyop;
 				intercode->codeinfo.doubleop.op2=fun;
 				insertintercode(intercode);
 			}
@@ -1017,7 +1023,7 @@ void callfunc_intercode(TreeNode *p, Operand *op)
 				strcpy(fun->opinfo.contents,p->children[0]->contents);
 				InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
     			intercode->kind = CALL;
-				intercode->codeinfo.doubleop.op1=op;
+				intercode->codeinfo.doubleop.op1=copyop;
 				intercode->codeinfo.doubleop.op2=fun;
 				insertintercode(intercode);
 			}		

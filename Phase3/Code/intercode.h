@@ -84,11 +84,11 @@ int calculatesize(TypeInfo *type);
 void insertparalist(char name[33]);
 int structisparameter(char name[33]);
 void clearparalist();
-void printOperand(Operand *op);
-void printIntercode(InterCode *head);
+void printOperand(Operand *op, FILE *fp);
+void printIntercode(InterCode *head, FILE *fp);
 
 //generating intercode function
-void generate_intercode(TreeNode *root);
+void generate_intercode(TreeNode *root, FILE *fp);
 void extdeflist_intercode(TreeNode *p);
 void extdef_intercode(TreeNode *p);
 void fundec_intercode(TreeNode *p);

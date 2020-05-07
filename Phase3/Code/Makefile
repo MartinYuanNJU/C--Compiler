@@ -34,38 +34,27 @@ syntax-c: $(YFILE)
 # 定义的一些伪目标
 .PHONY: clean test
 test2017a:
-	./parser ../Test/Tests_2-2017/A-1.c
-	./parser ../Test/Tests_2-2017/A-2.c
-	./parser ../Test/Tests_2-2017/A-3.c
-	./parser ../Test/Tests_2-2017/A-4.c
-	./parser ../Test/Tests_2-2017/A-5.c
-	./parser ../Test/Tests_2-2017/A-6.c
-	./parser ../Test/Tests_2-2017/A-7.c
-	./parser ../Test/Tests_2-2017/A-8.c
-	./parser ../Test/Tests_2-2017/A-9.c
-	./parser ../Test/Tests_2-2017/A-10.c
-	./parser ../Test/Tests_2-2017/A-11.c
-	./parser ../Test/Tests_2-2017/A-12.c
-	./parser ../Test/Tests_2-2017/A-13.c
-	./parser ../Test/Tests_2-2017/A-14.c
-	./parser ../Test/Tests_2-2017/A-15.c
-	./parser ../Test/Tests_2-2017/A-16.c
-	./parser ../Test/Tests_2-2017/A-17.c
-	./parser ../Test/Tests_2-2017/A-18.c
-	./parser ../Test/Tests_2-2017/A-19.c
-	./parser ../Test/Tests_2-2017/A-20.c
+	./parser ../Test/Tests_3-2017/official-A-1.cmm ../output/a1.ir
+	./parser ../Test/Tests_3-2017/official-A-2.cmm ../output/a2.ir
+	./parser ../Test/Tests_3-2017/official-A-3.cmm ../output/a3.ir
+	./parser ../Test/Tests_3-2017/official-A-4.cmm ../output/a4.ir
+	./parser ../Test/Tests_3-2017/official-A-5.cmm ../output/a5.ir
 test2017b:
-	./parser ../Test/Tests_2-2017/B-1.c
-	./parser ../Test/Tests_2-2017/B-2.c
+	./parser ../Test/Tests_3-2017/official-B-1.cmm ../output/b1.ir
+	./parser ../Test/Tests_3-2017/official-B-2.cmm ../output/b2.ir
+	./parser ../Test/Tests_3-2017/official-B-3.cmm ../output/b3.ir
 test2017c:
-	./parser ../Test/Tests_2-2017/C-1.c
-	./parser ../Test/Tests_2-2017/C-2.c
+	./parser ../Test/Tests_3-2017/official-C-1.cmm ../output/c1.ir
+	./parser ../Test/Tests_3-2017/official-C-2.cmm ../output/c2.ir
 test2017d:
-	./parser ../Test/Tests_2-2017/D-1.c
-	./parser ../Test/Tests_2-2017/D-2.c
-	./parser ../Test/Tests_2-2017/D-3.c
+	./parser ../Test/Tests_3-2017/official-D-1.cmm ../output/d1.ir
 test2017e:
-	./parser ../Test/Tests_2-2017/E-3.c
+	./parser ../Test/Tests_3-2017/official-E1-1.cmm ../output/e11.ir
+	./parser ../Test/Tests_3-2017/official-E1-2.cmm ../output/e12.ir
+	./parser ../Test/Tests_3-2017/official-E1-3.cmm ../output/e13.ir
+	./parser ../Test/Tests_3-2017/official-E2-1.cmm ../output/e21.ir
+	./parser ../Test/Tests_3-2017/official-E2-2.cmm ../output/e22.ir
+	./parser ../Test/Tests_3-2017/official-E2-3.cmm ../output/e23.ir
 test2019a:
 	./parser ../Test/Tests_2-2019/A-1.c
 	./parser ../Test/Tests_2-2019/A-2.c

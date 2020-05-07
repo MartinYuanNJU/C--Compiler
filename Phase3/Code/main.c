@@ -35,7 +35,17 @@ int main(int argc, char *argv[])
 
         semantic_analysis(root);
 
-        generate_intercode(root);
+        FILE *intercodefile = fopen(argv[2], "w+");
+        if(!intercodefile)
+        {
+            perror(argv[2]);
+            fclose(fp);
+            return 1;
+        }
+
+        generate_intercode(root, intercodefile);
+
+        fclose(intercodefile);
 
         fclose(fp);
     }
