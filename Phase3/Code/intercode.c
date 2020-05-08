@@ -593,7 +593,40 @@ void stmt_intercode(TreeNode *p)
 void cond_intercode(TreeNode *p, Operand *label_true, Operand *label_false)
 {
     if(printnode_intercode == 1)
-        printf("enter cond_intercode\n");
+        printf("enter cond_intercode %d\n", p->linenumber);
+    if(p->childrennum < 1)
+    {
+        if(printnode_intercode == 1)
+            printf("leave cond_intercode %d\n", p->linenumber);
+        return;
+    }
+    if(p->childrennum == 1)
+    {
+        Operand *tempvar = newOperand(TEMP_VARIABLE);
+        //code1
+        exp_intercode(p, tempvar);
+        //code2
+        Operand *constant = (Operand*)malloc(sizeof(Operand));
+        constant->kind = CONSTANT;
+        constant->opinfo.constant_value = 0;
+        InterCode *intercoderelop = (InterCode*)malloc(sizeof(InterCode));
+        intercoderelop->kind = RELOPGOTO;
+        intercoderelop->codeinfo.relopgoto.x = tempvar;
+        intercoderelop->codeinfo.relopgoto.y = constant;
+        Operand *copylabeltrue = copyLabel(label_true);
+        intercoderelop->codeinfo.relopgoto.z = copylabeltrue;
+        strcpy(intercoderelop->codeinfo.relopgoto.relop, "!=");
+        insertintercode(intercoderelop);
+        //GOTO label_false
+        Operand *copylabelfalse = copyLabel(label_false);
+        InterCode *intercodegoto = (InterCode*)malloc(sizeof(InterCode));
+        intercodegoto->kind=GOTO;
+        intercodegoto->codeinfo.singleop.op=copylabelfalse;
+        insertintercode(intercodegoto);
+        if(printnode_intercode == 1)
+            printf("leave cond_intercode %d\n", p->linenumber);
+        return;
+    }
     if(strcmp(p->children[0]->type, "NOT") == 0) //NOT Exp
     {
         cond_intercode(p->children[1], label_false, label_true);
@@ -673,7 +706,7 @@ void cond_intercode(TreeNode *p, Operand *label_true, Operand *label_false)
         insertintercode(intercodegoto);
     }
     if(printnode_intercode == 1)
-        printf("leave cond_intercode\n");
+        printf("leave cond_intercode %d\n", p->linenumber);
 }
 
 void exp_intercode(TreeNode *p, Operand *op)
