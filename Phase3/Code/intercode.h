@@ -85,6 +85,7 @@ void insertparalist(char name[33]);
 int structisparameter(char name[33]);
 void clearparalist();
 void printOperand(Operand *op, FILE *fp);
+void printoperand(Operand *op);
 void printIntercode(InterCode *head, FILE *fp);
 
 //generating intercode function

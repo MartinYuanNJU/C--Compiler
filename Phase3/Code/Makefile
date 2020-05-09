@@ -88,6 +88,29 @@ test2019d:
 	./parser ../Test/Tests_2-2019/D-3.c
 test2019e:
 	./parser ../Test/Tests_2-2019/E-3.c
+testarray:
+	./parser ../Test/Tests_3-2017/array.cmm ../output/array.ir
+testnormala:
+	./parser ../Test/Tests_3_Normal/Tests/A_1.cmm ../output/a1_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/A_2.cmm ../output/a2_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/A_3.cmm ../output/a3_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/A_4.cmm ../output/a4_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/A_5.cmm ../output/a5_normal.ir
+testnormalb:
+	./parser ../Test/Tests_3_Normal/Tests/B_1.cmm ../output/b1_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/B_2.cmm ../output/b2_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/B_3.cmm ../output/b3_normal.ir
+testnormalc:
+	./parser ../Test/Tests_3_Normal/Tests/C_1.cmm ../output/c1_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/C_2.cmm ../output/c2_normal.ir
+testnormald:
+	./parser ../Test/Tests_3_Normal/Tests/D_1.cmm ../output/d1_normal.ir
+testnormale:
+	./parser ../Test/Tests_3_Normal/Tests/E1_1.cmm ../output/e1_1_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/E1_2.cmm ../output/e1_2_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/E1_3.cmm ../output/e1_3_normal.ir
+
+
 
 clean:
 	rm -f parser lex.yy.c syntax.tab.c syntax.tab.h syntax.output

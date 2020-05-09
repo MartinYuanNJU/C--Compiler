@@ -144,6 +144,18 @@ void printOperand(Operand *op, FILE *fp)
         fprintf(fp, "%s",op->opinfo.contents);
 }
 
+void printoperand(Operand *op)
+{
+    if(op->kind == CONSTANT)
+        printf("#%d",op->opinfo.constant_value);
+    else if(op->kind == TEMP_ADDRESS || op->kind == ADDRESS)
+        printf("&%s",op->opinfo.contents);
+    else if(op->kind == STAR)
+        printf("*%s",op->opinfo.contents);
+    else
+        printf("%s",op->opinfo.contents);
+}
+
 void printIntercode(InterCode *head, FILE *fp)
 {
     for(InterCode *p=head; p!=NULL; p=p->next)
@@ -855,12 +867,61 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 	//code1
 	Operand *tempvar2 = newOperand(TEMP_VARIABLE);
 	exp_intercode(p->children[2],tempvar2);
-	//code2 [variable.name:=t1]
-	InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
-    intercode->kind = ASSIGN;
-	intercode->codeinfo.doubleop.op1=tempvar1;
-	intercode->codeinfo.doubleop.op2=tempvar2;
-	insertintercode(intercode);
+	TypeInfo *type1 = Exp(p->children[0]);
+	TypeInfo *type2 = Exp(p->children[2]);
+	if(type1->kind==ARRAY&&type2->kind==ARRAY)
+	{
+		tempvar1->kind=ADDRESS;
+		tempvar2->kind=ADDRESS;
+		Operand *temp1 = newOperand(TEMP_VARIABLE);
+		Operand *temp2 = newOperand(TEMP_VARIABLE);
+		int elementsize = calculatesize(type1->info.array.element);
+		int size1=type1->info.array.size;
+		int size2=type2->info.array.size;
+		int arraysize;
+		if(size1<size2)
+			arraysize=size1;
+		else
+			arraysize=size2;
+		for(int i=0;i<arraysize;i++){
+			Operand *constant_size =(Operand*)malloc(sizeof(Operand));
+    			constant_size->kind = CONSTANT;
+    			constant_size->opinfo.constant_value = i*elementsize;
+			InterCode *tempcode1 = (InterCode*)malloc(sizeof(InterCode));
+    			tempcode1->kind = PLUS;
+			tempcode1->codeinfo.tripleop.op=temp1;
+			tempcode1->codeinfo.tripleop.op1=copyOperand(tempvar1);
+			tempcode1->codeinfo.tripleop.op2=constant_size;
+			insertintercode(tempcode1);
+			InterCode *tempcode2 = (InterCode*)malloc(sizeof(InterCode));
+    			tempcode2->kind = PLUS;
+			tempcode2->codeinfo.tripleop.op=temp2;
+			tempcode2->codeinfo.tripleop.op1=copyOperand(tempvar2);
+			tempcode2->codeinfo.tripleop.op2=constant_size;
+			insertintercode(tempcode2);
+			temp1->kind=STAR;
+			temp2->kind=STAR;
+			InterCode *arraycode = (InterCode*)malloc(sizeof(InterCode));
+    			arraycode->kind = ASSIGN;
+			arraycode->codeinfo.doubleop.op1=copyOperand(temp1);
+			arraycode->codeinfo.doubleop.op2=copyOperand(temp2);
+			insertintercode(arraycode);
+			temp1->kind=VARIABLE;
+			temp2->kind=VARIABLE;
+		}
+		tempvar1->kind=VARIABLE;
+		tempvar2->kind=VARIABLE;
+
+	}
+	else
+	{
+		//code2 [variable.name:=t1]
+		InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+	    	intercode->kind = ASSIGN;
+		intercode->codeinfo.doubleop.op1=tempvar1;
+		intercode->codeinfo.doubleop.op2=tempvar2;
+		insertintercode(intercode);
+	}
 	//code2 [place:=variable.name]
 	op->kind=tempvar1->kind;
 	strcpy(op->opinfo.contents, tempvar1->opinfo.contents);
