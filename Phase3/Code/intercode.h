@@ -60,6 +60,12 @@ typedef struct structParameterList
     struct structParameterList *next;
 } structParameterList;
 
+typedef struct DuplicateLabel
+{
+    char labelname[33];
+    struct DuplicateLabel *next;
+} DuplicateLabel;
+
 typedef struct Args
 {
 	Operand *one_arg;
@@ -70,6 +76,8 @@ struct InterCode *listhead;
 struct InterCode *listtail;
 
 struct structParameterList *paralisthead;
+
+struct DuplicateLabel *duplabelhead;
 
 int label_no;
 int tempvar_no;
@@ -87,6 +95,10 @@ void clearparalist();
 void printOperand(Operand *op, FILE *fp);
 void printoperand(Operand *op);
 void printIntercode(InterCode *head, FILE *fp);
+void deleteintercode(InterCode *intercode);
+void insertduplablelist(char name[33]);
+int labelisduplicate(char name[33]);
+void clearduplabellist();
 
 //generating intercode function
 void generate_intercode(TreeNode *root, FILE *fp);
@@ -116,6 +128,8 @@ void expassignop_intercode(TreeNode *p, Operand *op);
 void callstruct_intercode(TreeNode *p, Operand *op);
 void expcalculate_intercode(TreeNode *p, Operand *op);
 void callarray_intercode(TreeNode *p, Operand *op);
+void optimize_intercode();
+void delete_duplicate_label();
 
 #endif
 

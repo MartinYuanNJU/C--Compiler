@@ -10,6 +10,8 @@ void initialize()
 
     paralisthead = NULL;
 
+    duplabelhead = NULL;
+
     label_no = 1;
     tempvar_no = 1;
 }
@@ -129,6 +131,36 @@ void clearparalist()
         structParameterList *stparlist = paralisthead;
         paralisthead = paralisthead->next;
         free(stparlist);
+    }
+}
+
+void insertduplablelist(char name[33])
+{
+    DuplicateLabel *duplabel = (DuplicateLabel*)malloc(sizeof(DuplicateLabel));
+    strcpy(duplabel->labelname, name);
+    duplabel->next = duplabelhead;
+    duplabelhead = duplabel;
+}
+
+int labelisduplicate(char name[33])
+{
+    DuplicateLabel *duplabel = duplabelhead;
+    while(duplabel != NULL)
+    {
+        if(strcmp(duplabel->labelname, name)==0)
+            return 1;
+        duplabel = duplabel->next;
+    }
+    return 0;
+}
+
+void clearduplabellist()
+{
+    while(duplabelhead != NULL)
+    {
+        DuplicateLabel *duplabel = duplabelhead;
+        duplabelhead = duplabelhead->next;
+        free(duplabel);
     }
 }
 
@@ -257,6 +289,36 @@ void printIntercode(InterCode *head, FILE *fp)
     }
 }
 
+void deleteintercode(InterCode *intercode)
+{
+    if(intercode == listhead)
+    {
+        if(intercode == listtail)
+        {
+            listhead = NULL;
+            listtail = NULL;
+        }
+        else
+        {
+            listhead = intercode->next;
+            listhead->previous = NULL;
+        }
+    }
+    else
+    {
+        if(intercode == listtail)
+        {
+            listtail = intercode->previous;
+            listtail->next = NULL;
+        }
+        else
+        {
+            intercode->previous->next = intercode->next;
+            intercode->next->previous = intercode->previous;
+        }
+    }
+}
+
 //generating intercode
 void generate_intercode(TreeNode *root, FILE *fp)
 {
@@ -267,7 +329,10 @@ void generate_intercode(TreeNode *root, FILE *fp)
     initialize();
     extdeflist_intercode(root->children[0]);
 	if(errorsum == 0)
-    	printIntercode(listhead, fp);
+    {
+        optimize_intercode();
+        printIntercode(listhead, fp);
+    }
 }
 
 void extdeflist_intercode(TreeNode *p)
@@ -1160,4 +1225,86 @@ Args* arg_intercode(TreeNode *p)
     if(printnode_intercode == 1)
         printf("leave arg_intercode\n");
 	return args;
+}
+
+void optimize_intercode()
+{
+    delete_duplicate_label();
+}
+
+void delete_duplicate_label()
+{
+    while(1)
+    {
+        //find dulicate label group
+        int found = 0;
+        clearduplabellist();
+        InterCode *p = listhead;
+        int state = 0;
+        while(p != NULL)
+        {
+            if(p->kind == LABEL_IC)
+            {
+                if(state == 0)
+                    state = 1;
+                else
+                {
+                    found = 1;
+                    break;
+                }
+            }
+            else
+                state = 0;
+            p = p->next;
+        }
+        if(found == 0)
+            break;
+        if(p->previous == NULL || p->previous->kind != LABEL_IC || p->kind != LABEL_IC)
+            break;
+        char mergename[33];
+        strcpy(mergename, p->previous->codeinfo.singleop.op->opinfo.contents);
+        insertduplablelist(p->codeinfo.singleop.op->opinfo.contents);
+        p = p->next;
+        while(p != NULL)
+        {
+            if(p->kind != LABEL_IC)
+                break;
+            insertduplablelist(p->codeinfo.singleop.op->opinfo.contents);
+            p = p->next;
+        }
+        //then scan the intercode again, replace these label
+        p = listhead;
+        while(p != NULL)
+        {
+            if(p->kind == RELOPGOTO)
+            {
+                if(labelisduplicate(p->codeinfo.relopgoto.z->opinfo.contents)==1)
+                {
+                    strcpy(p->codeinfo.relopgoto.z->opinfo.contents, mergename);
+                }
+                p = p->next;
+            }
+            else if(p->kind == GOTO)
+            {
+                if(labelisduplicate(p->codeinfo.singleop.op->opinfo.contents)==1)
+                {
+                    strcpy(p->codeinfo.singleop.op->opinfo.contents, mergename);
+                }
+                p = p->next;
+            }
+            else if(p->kind == LABEL_IC)
+            {
+                if(labelisduplicate(p->codeinfo.singleop.op->opinfo.contents)==1)
+                {
+                    InterCode *q = p;
+                    p = p->next;
+                    deleteintercode(q);
+                }
+                else
+                    p = p->next;
+            }
+            else
+                p = p->next;
+        }
+    }
 }
