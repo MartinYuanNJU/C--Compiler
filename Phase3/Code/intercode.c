@@ -348,13 +348,13 @@ void delete_duplicate_goto()
 		else if(!strcmp(relop->codeinfo.relopgoto.relop,"!="))
 		    strcpy(relop->codeinfo.relopgoto.relop,"==");
 		else if(!strcmp(relop->codeinfo.relopgoto.relop,">="))
-		    strcpy(relop->codeinfo.relopgoto.relop,"<=");
-		else if(!strcmp(relop->codeinfo.relopgoto.relop,"<="))
-		    strcpy(relop->codeinfo.relopgoto.relop,">=");
-		else if(!strcmp(relop->codeinfo.relopgoto.relop,">"))
 		    strcpy(relop->codeinfo.relopgoto.relop,"<");
-		else if(!strcmp(relop->codeinfo.relopgoto.relop,"<"))
+		else if(!strcmp(relop->codeinfo.relopgoto.relop,"<="))
 		    strcpy(relop->codeinfo.relopgoto.relop,">");
+		else if(!strcmp(relop->codeinfo.relopgoto.relop,">"))
+		    strcpy(relop->codeinfo.relopgoto.relop,"<=");
+		else if(!strcmp(relop->codeinfo.relopgoto.relop,"<"))
+		    strcpy(relop->codeinfo.relopgoto.relop,">=");
 	    }
 	    p=p->next;
 	}
