@@ -319,6 +319,49 @@ void deleteintercode(InterCode *intercode)
     }
 }
 
+void delete_duplicate_goto()
+{
+    InterCode *p=listhead;
+    while(p!=NULL)
+    {
+	if(p->kind==RELOPGOTO)
+	{
+	    InterCode *relop=p;
+	    InterCode *Goto=p->next;
+	    if(Goto==NULL)
+	    {
+		p=p->next;
+		continue;
+	    }
+	    InterCode *Label=Goto->next;
+	    if(Label==NULL)
+	    {
+		p=p->next;
+		continue;
+	    }
+	    if(Goto->kind==GOTO&&Label->kind==LABEL_IC&&strcmp(relop->codeinfo.relopgoto.z->opinfo.contents,Label->codeinfo.singleop.op->opinfo.contents)==0)
+	    {
+		strcpy(relop->codeinfo.relopgoto.z->opinfo.contents,Goto->codeinfo.singleop.op->opinfo.contents);
+		deleteintercode(Goto);
+		if(!strcmp(relop->codeinfo.relopgoto.relop,"=="))
+		    strcpy(relop->codeinfo.relopgoto.relop,"!=");	
+		else if(!strcmp(relop->codeinfo.relopgoto.relop,"!="))
+		    strcpy(relop->codeinfo.relopgoto.relop,"==");
+		else if(!strcmp(relop->codeinfo.relopgoto.relop,">="))
+		    strcpy(relop->codeinfo.relopgoto.relop,"<=");
+		else if(!strcmp(relop->codeinfo.relopgoto.relop,"<="))
+		    strcpy(relop->codeinfo.relopgoto.relop,">=");
+		else if(!strcmp(relop->codeinfo.relopgoto.relop,">"))
+		    strcpy(relop->codeinfo.relopgoto.relop,"<");
+		else if(!strcmp(relop->codeinfo.relopgoto.relop,"<"))
+		    strcpy(relop->codeinfo.relopgoto.relop,">");
+	    }
+	    p=p->next;
+	}
+	else
+	    p=p->next;
+    }	
+}
 //generating intercode
 void generate_intercode(TreeNode *root, FILE *fp)
 {
@@ -331,6 +374,7 @@ void generate_intercode(TreeNode *root, FILE *fp)
 	if(errorsum == 0)
     {
         optimize_intercode();
+	delete_duplicate_goto();
         printIntercode(listhead, fp);
     }
 }
@@ -398,7 +442,7 @@ void funcvardec_intercode(TreeNode *p)
     if(p->childrennum > 1)
     {
         if(errorsum == 0)
-            printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
+            printf("3.Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
         errorsum++;
     }
     else
@@ -480,9 +524,73 @@ void funcdec_intercode(TreeNode *p)
     {
         if(p->children[0]->childrennum > 1) //initialize array
         {
-            if(errorsum == 0)
-                printf("Cannot translate: Try to initialize array at line %d.\n", p->children[0]->linenumber);
-            errorsum++;
+            if(p->children[0]->children[0]->childrennum > 1)
+	    {
+		if(errorsum == 0)
+            		printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
+                errorsum++;
+	    }
+	    else
+	    {
+		HashNode *node = findsymbol(p->children[0]->children[0]->children[0]->contents, ARRAY);
+            	int size = calculatesize(node->typeinfo);
+            	InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
+            	intercode->kind = DEC;
+            	Operand *tempvar1 = (Operand*)malloc(sizeof(Operand));
+            	tempvar1->kind = VARIABLE;
+            	strcpy(tempvar1->opinfo.contents, node->name);
+            	intercode->codeinfo.dec.op = tempvar1;
+            	intercode->codeinfo.dec.size = size;
+            	insertintercode(intercode);
+		Operand *tempvar2 = newOperand(TEMP_VARIABLE);
+		exp_intercode(p->children[2],tempvar2);
+		TypeInfo *type2 = Exp(p->children[2]);
+
+		if(type2->kind==ARRAY)
+		{
+			tempvar1->kind=ADDRESS;
+			tempvar2->kind=VARIABLE;
+			Operand *temp1 = newOperand(TEMP_VARIABLE);
+			Operand *temp2 = newOperand(TEMP_VARIABLE);
+			int elementsize = calculatesize(node->typeinfo->info.array.element);
+			int size1=node->typeinfo->info.array.size;
+			int size2=type2->info.array.size;
+			int arraysize;
+			if(size<size2)
+				arraysize=size;
+			else
+				arraysize=size2;
+			for(int i=0;i<arraysize;i++){
+				Operand *constant_size =(Operand*)malloc(sizeof(Operand));
+	    			constant_size->kind = CONSTANT;
+	    			constant_size->opinfo.constant_value = i*elementsize;
+				InterCode *tempcode1 = (InterCode*)malloc(sizeof(InterCode));
+	    			tempcode1->kind = PLUS;
+				tempcode1->codeinfo.tripleop.op=temp1;
+				tempcode1->codeinfo.tripleop.op1=copyOperand(tempvar1);
+				tempcode1->codeinfo.tripleop.op2=constant_size;
+				insertintercode(tempcode1);
+				InterCode *tempcode2 = (InterCode*)malloc(sizeof(InterCode));
+	    			tempcode2->kind = PLUS;
+				tempcode2->codeinfo.tripleop.op=temp2;
+				tempcode2->codeinfo.tripleop.op1=copyOperand(tempvar2);
+				tempcode2->codeinfo.tripleop.op2=constant_size;
+				insertintercode(tempcode2);
+				temp1->kind=STAR;
+				temp2->kind=STAR;
+				InterCode *arraycode = (InterCode*)malloc(sizeof(InterCode));
+	    			arraycode->kind = ASSIGN;
+				arraycode->codeinfo.doubleop.op1=copyOperand(temp1);
+				arraycode->codeinfo.doubleop.op2=copyOperand(temp2);
+				insertintercode(arraycode);
+				temp1->kind=VARIABLE;
+				temp2->kind=VARIABLE;
+		}
+		tempvar1->kind=VARIABLE;
+		tempvar2->kind=STAR;
+		}
+	    }
+		
         }
         else
         {
@@ -531,7 +639,7 @@ void vardec_intercode(TreeNode *p)
         if(p->children[0]->childrennum > 1)
         {
             if(errorsum == 0)
-                printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
+                printf("2.Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
             errorsum++;
         }
         else

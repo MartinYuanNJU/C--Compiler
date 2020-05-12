@@ -1,0 +1,12 @@
+int main()
+{
+	int a,b;
+	a=read();
+	b=read();
+	if(a<b)
+		write(a);
+	else
+		write(b);
+	return 0;
+
+}

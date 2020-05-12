@@ -99,7 +99,7 @@ void deleteintercode(InterCode *intercode);
 void insertduplablelist(char name[33]);
 int labelisduplicate(char name[33]);
 void clearduplabellist();
-
+void delete_duplicate_goto();
 //generating intercode function
 void generate_intercode(TreeNode *root, FILE *fp);
 void extdeflist_intercode(TreeNode *p);

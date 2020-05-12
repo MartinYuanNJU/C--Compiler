@@ -90,6 +90,8 @@ test2019e:
 	./parser ../Test/Tests_2-2019/E-3.c
 testarray:
 	./parser ../Test/Tests_3-2017/array.cmm ../output/array.ir
+testrelopgoto:
+	./parser ../Test/Tests_3-2017/relopgoto.cmm ../output/relopgoto.ir
 testnormala:
 	./parser ../Test/Tests_3_Normal/Tests/A_1.cmm ../output/a1_normal.ir
 	./parser ../Test/Tests_3_Normal/Tests/A_2.cmm ../output/a2_normal.ir
