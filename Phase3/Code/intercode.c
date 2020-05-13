@@ -3,6 +3,12 @@
 extern int errorsum;
 int printnode_intercode = 0;
 
+int openvc = 1;
+
+int whilecond;
+int whilestmt;
+int ifelsestmt;
+
 void initialize()
 {
     listhead = NULL;
@@ -14,6 +20,15 @@ void initialize()
 
     label_no = 1;
     tempvar_no = 1;
+
+    for(int i=0; i<=HASH_NUMBER; i++)
+        labeltable[i] = NULL;
+
+    vclisthead = NULL;
+
+    whilecond = 0;
+    whilestmt = 0;
+    ifelsestmt = 0;
 }
 
 void insertintercode(InterCode *intercode)
@@ -32,6 +47,140 @@ void insertintercode(InterCode *intercode)
         intercode->next = NULL;
         listtail = intercode;
     }
+}
+
+void deleteintercode(InterCode *intercode)
+{
+    if(intercode == listhead)
+    {
+        if(intercode == listtail)
+        {
+            listhead = NULL;
+            listtail = NULL;
+        }
+        else
+        {
+            listhead = intercode->next;
+            listhead->previous = NULL;
+        }
+    }
+    else
+    {
+        if(intercode == listtail)
+        {
+            listtail = intercode->previous;
+            listtail->next = NULL;
+        }
+        else
+        {
+            intercode->previous->next = intercode->next;
+            intercode->next->previous = intercode->previous;
+        }
+    }
+}
+
+void insertlabel(char name[33])
+{
+    LabelNode *node = (LabelNode*)malloc(sizeof(LabelNode));
+    strcpy(node->labelname, name);
+    char hashname[33];
+    strcpy(hashname, name);
+    int index = hash_func(hashname);
+    node->next = labeltable[index];
+    labeltable[index] = node;
+}
+
+int checklabel(char name[33])
+{
+    char hashname[33];
+    strcpy(hashname, name);
+    int index = hash_func(hashname);
+    LabelNode *p = labeltable[index];
+    for(; p != NULL; p = p->next)
+    {
+        if(strcmp(p->labelname, name)==0)
+            return 1;
+    }
+    return 0;
+}
+
+void insertvc(char name[33], int value, int valid)
+{
+    if(variableisvc(name)==0)
+    {
+        VCList *vcnode = (VCList*)malloc(sizeof(VCList));
+        strcpy(vcnode->vc_contents, name);
+        vcnode->vc_value = value;
+        vcnode->valid = valid;
+        vcnode->next = vclisthead;
+        vclisthead = vcnode;
+    }
+    else
+    {
+        for(VCList *p = vclisthead; p != NULL; p = p->next)
+        {
+            if(strcmp(p->vc_contents, name)==0)
+            {
+                p->vc_value = value;
+                p->valid = valid;
+                break;
+            }
+        }
+    }
+}
+
+void deletevc(char name[33])
+{
+    if(vclisthead == NULL)
+        return;
+    if(strcmp(vclisthead->vc_contents, name)==0)
+    {
+        VCList *p = vclisthead;
+        vclisthead = vclisthead->next;
+        free(p);
+    }
+    else
+    {
+        for(VCList *p = vclisthead; p->next != NULL; p = p->next)
+        {
+            VCList *q = p->next;
+            if(strcmp(q->vc_contents, name)==0)
+            {
+                p->next = q->next;
+                free(q);
+                break;
+            }
+        }
+    }
+}
+
+int variableisvc(char name[33])
+{
+    for(VCList *p = vclisthead; p != NULL; p = p->next)
+    {
+        if(strcmp(p->vc_contents, name)==0)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+VCvalue* getvcvalue(char name[33])
+{
+    VCvalue *vcvalue = (VCvalue*)malloc(sizeof(VCvalue));
+    for(VCList *p = vclisthead; p != NULL; p = p->next)
+    {
+        if(strcmp(p->vc_contents, name)==0)
+        {
+            vcvalue->value = p->vc_value;
+            vcvalue->valid = p->valid;
+            return vcvalue;
+        }
+    }
+    vcvalue->value = 0x80000000;
+    vcvalue->valid = 0;
+    return vcvalue;
 }
 
 Operand* newOperand(OperandKind kind)
@@ -78,6 +227,11 @@ Operand* copyOperand(Operand *op)
     operand->kind = op->kind;
     if(op->kind == CONSTANT)
         operand->opinfo.constant_value = op->opinfo.constant_value;
+    else if(op->kind == VARIABLE_CONSTANT)
+    {
+        operand->opinfo.constant_value = op->opinfo.constant_value;
+        strcpy(operand->opinfo.contents, op->opinfo.contents);
+    }
     else
         strcpy(operand->opinfo.contents, op->opinfo.contents);
     return operand; 
@@ -166,7 +320,7 @@ void clearduplabellist()
 
 void printOperand(Operand *op, FILE *fp)
 {
-    if(op->kind == CONSTANT)
+    if(op->kind == CONSTANT || op->kind == VARIABLE_CONSTANT)
         fprintf(fp, "#%d",op->opinfo.constant_value);
     else if(op->kind == TEMP_ADDRESS || op->kind == ADDRESS)
         fprintf(fp,"&%s",op->opinfo.contents);
@@ -174,18 +328,6 @@ void printOperand(Operand *op, FILE *fp)
         fprintf(fp, "*%s",op->opinfo.contents);
     else
         fprintf(fp, "%s",op->opinfo.contents);
-}
-
-void printoperand(Operand *op)
-{
-    if(op->kind == CONSTANT)
-        printf("#%d",op->opinfo.constant_value);
-    else if(op->kind == TEMP_ADDRESS || op->kind == ADDRESS)
-        printf("&%s",op->opinfo.contents);
-    else if(op->kind == STAR)
-        printf("*%s",op->opinfo.contents);
-    else
-        printf("%s",op->opinfo.contents);
 }
 
 void printIntercode(InterCode *head, FILE *fp)
@@ -289,79 +431,6 @@ void printIntercode(InterCode *head, FILE *fp)
     }
 }
 
-void deleteintercode(InterCode *intercode)
-{
-    if(intercode == listhead)
-    {
-        if(intercode == listtail)
-        {
-            listhead = NULL;
-            listtail = NULL;
-        }
-        else
-        {
-            listhead = intercode->next;
-            listhead->previous = NULL;
-        }
-    }
-    else
-    {
-        if(intercode == listtail)
-        {
-            listtail = intercode->previous;
-            listtail->next = NULL;
-        }
-        else
-        {
-            intercode->previous->next = intercode->next;
-            intercode->next->previous = intercode->previous;
-        }
-    }
-}
-
-void delete_duplicate_goto()
-{
-    InterCode *p=listhead;
-    while(p!=NULL)
-    {
-	if(p->kind==RELOPGOTO)
-	{
-	    InterCode *relop=p;
-	    InterCode *Goto=p->next;
-	    if(Goto==NULL)
-	    {
-		p=p->next;
-		continue;
-	    }
-	    InterCode *Label=Goto->next;
-	    if(Label==NULL)
-	    {
-		p=p->next;
-		continue;
-	    }
-	    if(Goto->kind==GOTO&&Label->kind==LABEL_IC&&strcmp(relop->codeinfo.relopgoto.z->opinfo.contents,Label->codeinfo.singleop.op->opinfo.contents)==0)
-	    {
-		strcpy(relop->codeinfo.relopgoto.z->opinfo.contents,Goto->codeinfo.singleop.op->opinfo.contents);
-		deleteintercode(Goto);
-		if(!strcmp(relop->codeinfo.relopgoto.relop,"=="))
-		    strcpy(relop->codeinfo.relopgoto.relop,"!=");	
-		else if(!strcmp(relop->codeinfo.relopgoto.relop,"!="))
-		    strcpy(relop->codeinfo.relopgoto.relop,"==");
-		else if(!strcmp(relop->codeinfo.relopgoto.relop,">="))
-		    strcpy(relop->codeinfo.relopgoto.relop,"<");
-		else if(!strcmp(relop->codeinfo.relopgoto.relop,"<="))
-		    strcpy(relop->codeinfo.relopgoto.relop,">");
-		else if(!strcmp(relop->codeinfo.relopgoto.relop,">"))
-		    strcpy(relop->codeinfo.relopgoto.relop,"<=");
-		else if(!strcmp(relop->codeinfo.relopgoto.relop,"<"))
-		    strcpy(relop->codeinfo.relopgoto.relop,">=");
-	    }
-	    p=p->next;
-	}
-	else
-	    p=p->next;
-    }	
-}
 //generating intercode
 void generate_intercode(TreeNode *root, FILE *fp)
 {
@@ -374,7 +443,6 @@ void generate_intercode(TreeNode *root, FILE *fp)
 	if(errorsum == 0)
     {
         optimize_intercode();
-	delete_duplicate_goto();
         printIntercode(listhead, fp);
     }
 }
@@ -442,7 +510,7 @@ void funcvardec_intercode(TreeNode *p)
     if(p->childrennum > 1)
     {
         if(errorsum == 0)
-            printf("3.Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
+            printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
         errorsum++;
     }
     else
@@ -525,14 +593,14 @@ void funcdec_intercode(TreeNode *p)
         if(p->children[0]->childrennum > 1) //initialize array
         {
             if(p->children[0]->children[0]->childrennum > 1)
-	    {
-		if(errorsum == 0)
+	        {
+		        if(errorsum == 0)
             		printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
                 errorsum++;
-	    }
-	    else
-	    {
-		HashNode *node = findsymbol(p->children[0]->children[0]->children[0]->contents, ARRAY);
+	        }
+	        else
+	        {
+		        HashNode *node = findsymbol(p->children[0]->children[0]->children[0]->contents, ARRAY);
             	int size = calculatesize(node->typeinfo);
             	InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
             	intercode->kind = DEC;
@@ -542,55 +610,54 @@ void funcdec_intercode(TreeNode *p)
             	intercode->codeinfo.dec.op = tempvar1;
             	intercode->codeinfo.dec.size = size;
             	insertintercode(intercode);
-		Operand *tempvar2 = newOperand(TEMP_VARIABLE);
-		exp_intercode(p->children[2],tempvar2);
-		TypeInfo *type2 = Exp(p->children[2]);
-
-		if(type2->kind==ARRAY)
-		{
-			tempvar1->kind=ADDRESS;
-			tempvar2->kind=VARIABLE;
-			Operand *temp1 = newOperand(TEMP_VARIABLE);
-			Operand *temp2 = newOperand(TEMP_VARIABLE);
-			int elementsize = calculatesize(node->typeinfo->info.array.element);
-			int size1=node->typeinfo->info.array.size;
-			int size2=type2->info.array.size;
-			int arraysize;
-			if(size<size2)
-				arraysize=size;
-			else
-				arraysize=size2;
-			for(int i=0;i<arraysize;i++){
-				Operand *constant_size =(Operand*)malloc(sizeof(Operand));
-	    			constant_size->kind = CONSTANT;
-	    			constant_size->opinfo.constant_value = i*elementsize;
-				InterCode *tempcode1 = (InterCode*)malloc(sizeof(InterCode));
-	    			tempcode1->kind = PLUS;
-				tempcode1->codeinfo.tripleop.op=temp1;
-				tempcode1->codeinfo.tripleop.op1=copyOperand(tempvar1);
-				tempcode1->codeinfo.tripleop.op2=constant_size;
-				insertintercode(tempcode1);
-				InterCode *tempcode2 = (InterCode*)malloc(sizeof(InterCode));
-	    			tempcode2->kind = PLUS;
-				tempcode2->codeinfo.tripleop.op=temp2;
-				tempcode2->codeinfo.tripleop.op1=copyOperand(tempvar2);
-				tempcode2->codeinfo.tripleop.op2=constant_size;
-				insertintercode(tempcode2);
-				temp1->kind=STAR;
-				temp2->kind=STAR;
-				InterCode *arraycode = (InterCode*)malloc(sizeof(InterCode));
-	    			arraycode->kind = ASSIGN;
-				arraycode->codeinfo.doubleop.op1=copyOperand(temp1);
-				arraycode->codeinfo.doubleop.op2=copyOperand(temp2);
-				insertintercode(arraycode);
-				temp1->kind=VARIABLE;
-				temp2->kind=VARIABLE;
-		}
-		tempvar1->kind=VARIABLE;
-		tempvar2->kind=STAR;
-		}
-	    }
-		
+		        Operand *tempvar2 = newOperand(TEMP_VARIABLE);
+		        exp_intercode(p->children[2],tempvar2);
+		        TypeInfo *type2 = Exp(p->children[2]);
+		        if(type2->kind==ARRAY && tempvar2->kind==STAR)
+		        {
+			        tempvar1->kind=ADDRESS;
+			        tempvar2->kind=VARIABLE;
+			        Operand *temp1 = newOperand(TEMP_VARIABLE);
+			        Operand *temp2 = newOperand(TEMP_VARIABLE);
+			        int elementsize = calculatesize(node->typeinfo->info.array.element);
+			        int size1=node->typeinfo->info.array.size;
+			        int size2=type2->info.array.size;
+			        int arraysize;
+			        if(size<size2)
+				        arraysize=size;
+			        else
+				        arraysize=size2;
+			        for(int i=0;i<arraysize;i++)
+                    {
+				        Operand *constant_size =(Operand*)malloc(sizeof(Operand));
+	    			    constant_size->kind = CONSTANT;
+	    			    constant_size->opinfo.constant_value = i*elementsize;
+				        InterCode *tempcode1 = (InterCode*)malloc(sizeof(InterCode));
+	    			    tempcode1->kind = PLUS;
+				        tempcode1->codeinfo.tripleop.op=temp1;
+				        tempcode1->codeinfo.tripleop.op1=copyOperand(tempvar1);
+				        tempcode1->codeinfo.tripleop.op2=constant_size;
+				        insertintercode(tempcode1);
+				        InterCode *tempcode2 = (InterCode*)malloc(sizeof(InterCode));
+	    			    tempcode2->kind = PLUS;
+				        tempcode2->codeinfo.tripleop.op=temp2;
+				        tempcode2->codeinfo.tripleop.op1=copyOperand(tempvar2);
+				        tempcode2->codeinfo.tripleop.op2=constant_size;
+				        insertintercode(tempcode2);
+				        temp1->kind=STAR;
+				        temp2->kind=STAR;
+				        InterCode *arraycode = (InterCode*)malloc(sizeof(InterCode));
+	    			    arraycode->kind = ASSIGN;
+				        arraycode->codeinfo.doubleop.op1=copyOperand(temp1);
+				        arraycode->codeinfo.doubleop.op2=copyOperand(temp2);
+				        insertintercode(arraycode);
+				        temp1->kind=VARIABLE;
+				        temp2->kind=VARIABLE;
+		            }
+		            tempvar1->kind=VARIABLE;
+		            tempvar2->kind=STAR;
+		        }
+	        }
         }
         else
         {
@@ -604,9 +671,26 @@ void funcdec_intercode(TreeNode *p)
             intercode->codeinfo.doubleop.op1 = leftvalue;
             intercode->codeinfo.doubleop.op2 = tempvar;
             insertintercode(intercode);
+
             //wxy do at line 645
             /*if(t1->kind==VAR_CONS||t1->kind==CONSTANT)
                 insert_VarconsList(left->u.value,t1->u.var_no);*/
+
+            //VC
+            if(openvc == 1)
+            {
+            // if(tempvar->kind == VARIABLE_CONSTANT)
+            // {
+            //     insertvc(p->children[0]->children[0]->contents, getvcvalue(tempvar->opinfo.contents));
+            // }
+            // else if(tempvar->kind == CONSTANT)
+            // {
+            //     insertvc(p->children[0]->children[0]->contents, tempvar->opinfo.constant_value);
+            // }
+                if(tempvar->kind == CONSTANT || tempvar->kind == VARIABLE_CONSTANT)
+                    insertvc(p->children[0]->children[0]->contents, tempvar->opinfo.constant_value, 1);
+            }
+            //endVC
         }
     }
     if(printnode_intercode == 1)
@@ -639,7 +723,7 @@ void vardec_intercode(TreeNode *p)
         if(p->children[0]->childrennum > 1)
         {
             if(errorsum == 0)
-                printf("2.Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
+                printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
             errorsum++;
         }
         else
@@ -706,7 +790,11 @@ void stmt_intercode(TreeNode *p)
             intercode1->kind=LABEL_IC;
             intercode1->codeinfo.singleop.op=label1;
             insertintercode(intercode1);
+            //VC
+            ifelsestmt++;
             stmt_intercode(p->children[4]);
+            //VC
+            ifelsestmt--;
             InterCode *intercode2 = (InterCode*)malloc(sizeof(InterCode));
             intercode2->kind=LABEL_IC;
             intercode2->codeinfo.singleop.op=label2;
@@ -721,12 +809,20 @@ void stmt_intercode(TreeNode *p)
             intercode1->kind=LABEL_IC;
             intercode1->codeinfo.singleop.op=label1;
             insertintercode(intercode1);
+            //VC
+            whilecond = 1;
             cond_intercode(p->children[2], label2, label3);
+            //VC
+            whilecond = 0;
             InterCode *intercode2 = (InterCode*)malloc(sizeof(InterCode));
             intercode2->kind=LABEL_IC;
             intercode2->codeinfo.singleop.op=label2;
             insertintercode(intercode2);
+            //VC
+            whilestmt++;
             stmt_intercode(p->children[4]);
+            //VC
+            whilestmt--;
             Operand *copylabel1 = copyLabel(label1);
             InterCode *intercodegoto = (InterCode*)malloc(sizeof(InterCode));
             intercodegoto->kind=GOTO;
@@ -751,7 +847,11 @@ void stmt_intercode(TreeNode *p)
         intercode1->codeinfo.singleop.op=label1;
         insertintercode(intercode1);
         //code2
+        //VC
+        ifelsestmt++;
         stmt_intercode(p->children[4]);
+        //VC
+        ifelsestmt--;
         //GOTO label3
         Operand *copylabel3 = copyLabel(label3);
         InterCode *intercodegoto = (InterCode*)malloc(sizeof(InterCode));
@@ -764,7 +864,11 @@ void stmt_intercode(TreeNode *p)
         intercode2->codeinfo.singleop.op=label2;
         insertintercode(intercode2);
         //code3
+        //VC
+        ifelsestmt++;
         stmt_intercode(p->children[6]);
+        //VC
+        ifelsestmt--;
         //LABEL label3
         InterCode *intercode3 = (InterCode*)malloc(sizeof(InterCode));
         intercode3->kind=LABEL_IC;
@@ -901,35 +1005,35 @@ void exp_intercode(TreeNode *p, Operand *op)
     if(p->childrennum == 1)
     {
         if(strcmp(p->children[0]->type, "ID") == 0)
-			return expid_intercode(p, op);
+			expid_intercode(p, op);
         else if(strcmp(p->children[0]->type, "INT") == 0)
-			return expint_intercode(p, op);
+			expint_intercode(p, op);
     }
 	else if(p->childrennum == 2)
 	{
 		if (strcmp(p->children[0]->type, "MINUS") == 0)
-			return minusexp_intercode(p, op);
+            minusexp_intercode(p, op);	
 		else
-			return boolexp_intercode(p, op);
+			boolexp_intercode(p, op);
 	}
 	else if(p->childrennum == 3)
 	{
 		if (strcmp(p->children[0]->type, "LP") == 0)// LP Exp RP
-			return exp_intercode(p->children[1], op);
+			exp_intercode(p->children[1], op);
 		else if (strcmp(p->children[0]->type, "ID") == 0)// ID LP RP
-			return callfunc_intercode(p, op);
+			callfunc_intercode(p, op);
 		else // Exp ...
 		{
 			if (strcmp(p->children[1]->type, "ASSIGNOP") == 0)
-				return expassignop_intercode(p, op);
+				expassignop_intercode(p, op);
 			else if (strcmp(p->children[0]->type, "AND") == 0 || strcmp(p->children[0]->type, "OR") == 0)
-				return boolexp_intercode(p, op);
+				boolexp_intercode(p, op);
 			else if (strcmp(p->children[1]->type, "DOT") == 0)
-				return callstruct_intercode(p, op);
+				callstruct_intercode(p, op);
 			else if (strcmp(p->children[1]->type, "RELOP") == 0)
-				return boolexp_intercode(p, op);
+				boolexp_intercode(p, op);
 			else //PLUS, MINUS, STAR, DIV
-				return expcalculate_intercode(p, op);
+				expcalculate_intercode(p, op);
 		}
 	}
 	else
@@ -951,8 +1055,33 @@ void expid_intercode(TreeNode *p, Operand *op)
     int ret2 = checksymbol(p->children[0]->contents, 1);
     if(ret1 == 0 && ret2 == 0)
         return;
+
     op->kind = VARIABLE;
     strcpy(op->opinfo.contents, p->children[0]->contents);
+
+    //VC
+    if(openvc == 1)
+    {
+    // if(variableisvc(p->children[0]->contents)==1 && whilecond == 0 && whilestmt == 0 && ifelsestmt == 0)
+    // {
+    //     op->kind = VARIABLE_CONSTANT;
+    // }
+        VCvalue *vcvalue = getvcvalue(p->children[0]->contents);
+        if(vcvalue->valid != 0 && whilecond == 0 && whilestmt == 0 && ifelsestmt == 0)
+        {
+            op->kind = VARIABLE_CONSTANT;
+            op->opinfo.constant_value = vcvalue->value;
+        }
+        else
+        {
+            if(whilestmt != 0 || ifelsestmt != 0)
+                insertvc(p->children[0]->contents, 0x80000000, 0);
+            op->kind = VARIABLE;
+            strcpy(op->opinfo.contents, p->children[0]->contents);
+        }
+    }
+    //endVC
+
     if(printnode_intercode == 1)
         printf("leave exp_intercode\n");
 }
@@ -975,6 +1104,42 @@ void minusexp_intercode(TreeNode *p, Operand *op)
     Operand *copyop = copyOperand(op);
     //code1
     exp_intercode(p->children[1],tempvar);
+
+    //VC
+    if(openvc == 1)
+    {
+    // if(op->kind == VARIABLE || op->kind == TEMP_VARIABLE || op->kind == VARIABLE_CONSTANT)
+    // {
+    //     if(tempvar->kind == CONSTANT)
+    //     {
+    //         op->kind = VARIABLE_CONSTANT;
+    //         insertvc(op->opinfo.contents, -tempvar->opinfo.constant_value);
+    //         if(printnode_intercode == 1)
+    //             printf("leave minusexp_intercode\n");
+    //         return;
+    //     }
+    //     else if(tempvar->kind == VARIABLE_CONSTANT)
+    //     {
+    //         op->kind = VARIABLE_CONSTANT;
+    //         int value = getvcvalue(tempvar->opinfo.contents);
+    //         insertvc(op->opinfo.contents, -value);
+    //         if(printnode_intercode == 1)
+    //             printf("leave minusexp_intercode\n");
+    //         return;
+    //     }
+    // }
+        if(tempvar->kind == CONSTANT || tempvar->kind == VARIABLE_CONSTANT)
+        {
+            op->kind = VARIABLE_CONSTANT;
+            int value = tempvar->opinfo.constant_value;
+            op->opinfo.constant_value = -value;
+            if(printnode_intercode == 1)
+                printf("leave minusexp_intercode\n");
+            return;
+        }
+    }
+    //endVC
+
     //code2
     InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
     intercode->kind = SUB;
@@ -1057,18 +1222,19 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 				arraysize=size1;
 			else
 				arraysize=size2;
-			for(int i=0;i<arraysize;i++){
+			for(int i=0;i<arraysize;i++)
+            {
 				Operand *constant_size =(Operand*)malloc(sizeof(Operand));
-	    			constant_size->kind = CONSTANT;
-	    			constant_size->opinfo.constant_value = i*elementsize;
+	    		constant_size->kind = CONSTANT;
+	    		constant_size->opinfo.constant_value = i*elementsize;
 				InterCode *tempcode1 = (InterCode*)malloc(sizeof(InterCode));
-	    			tempcode1->kind = PLUS;
+	    		tempcode1->kind = PLUS;
 				tempcode1->codeinfo.tripleop.op=temp1;
 				tempcode1->codeinfo.tripleop.op1=copyOperand(tempvar1);
 				tempcode1->codeinfo.tripleop.op2=constant_size;
 				insertintercode(tempcode1);
 				InterCode *tempcode2 = (InterCode*)malloc(sizeof(InterCode));
-	    			tempcode2->kind = PLUS;
+	    		tempcode2->kind = PLUS;
 				tempcode2->codeinfo.tripleop.op=temp2;
 				tempcode2->codeinfo.tripleop.op1=copyOperand(tempvar2);
 				tempcode2->codeinfo.tripleop.op2=constant_size;
@@ -1076,7 +1242,7 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 				temp1->kind=STAR;
 				temp2->kind=STAR;
 				InterCode *arraycode = (InterCode*)malloc(sizeof(InterCode));
-	    			arraycode->kind = ASSIGN;
+	    		arraycode->kind = ASSIGN;
 				arraycode->codeinfo.doubleop.op1=copyOperand(temp1);
 				arraycode->codeinfo.doubleop.op2=copyOperand(temp2);
 				insertintercode(arraycode);
@@ -1100,18 +1266,19 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 				arraysize=size1;
 			else
 				arraysize=size2;
-			for(int i=0;i<arraysize;i++){
+			for(int i=0;i<arraysize;i++)
+            {
 				Operand *constant_size =(Operand*)malloc(sizeof(Operand));
-	    			constant_size->kind = CONSTANT;
-	    			constant_size->opinfo.constant_value = i*elementsize;
+	    		constant_size->kind = CONSTANT;
+	    		constant_size->opinfo.constant_value = i*elementsize;
 				InterCode *tempcode1 = (InterCode*)malloc(sizeof(InterCode));
-	    			tempcode1->kind = PLUS;
+	    		tempcode1->kind = PLUS;
 				tempcode1->codeinfo.tripleop.op=temp1;
 				tempcode1->codeinfo.tripleop.op1=copyOperand(tempvar1);
 				tempcode1->codeinfo.tripleop.op2=constant_size;
 				insertintercode(tempcode1);
 				InterCode *tempcode2 = (InterCode*)malloc(sizeof(InterCode));
-	    			tempcode2->kind = PLUS;
+	    		tempcode2->kind = PLUS;
 				tempcode2->codeinfo.tripleop.op=temp2;
 				tempcode2->codeinfo.tripleop.op1=copyOperand(tempvar2);
 				tempcode2->codeinfo.tripleop.op2=constant_size;
@@ -1119,7 +1286,7 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 				temp1->kind=STAR;
 				temp2->kind=STAR;
 				InterCode *arraycode = (InterCode*)malloc(sizeof(InterCode));
-	    			arraycode->kind = ASSIGN;
+	    		arraycode->kind = ASSIGN;
 				arraycode->codeinfo.doubleop.op1=copyOperand(temp1);
 				arraycode->codeinfo.doubleop.op2=copyOperand(temp2);
 				insertintercode(arraycode);
@@ -1143,18 +1310,19 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 				arraysize=size1;
 			else
 				arraysize=size2;
-			for(int i=0;i<arraysize;i++){
+			for(int i=0;i<arraysize;i++)
+            {
 				Operand *constant_size =(Operand*)malloc(sizeof(Operand));
-	    			constant_size->kind = CONSTANT;
-	    			constant_size->opinfo.constant_value = i*elementsize;
+	    		constant_size->kind = CONSTANT;
+	    		constant_size->opinfo.constant_value = i*elementsize;
 				InterCode *tempcode1 = (InterCode*)malloc(sizeof(InterCode));
-	    			tempcode1->kind = PLUS;
+	    		tempcode1->kind = PLUS;
 				tempcode1->codeinfo.tripleop.op=temp1;
 				tempcode1->codeinfo.tripleop.op1=copyOperand(tempvar1);
 				tempcode1->codeinfo.tripleop.op2=constant_size;
 				insertintercode(tempcode1);
 				InterCode *tempcode2 = (InterCode*)malloc(sizeof(InterCode));
-	    			tempcode2->kind = PLUS;
+	    		tempcode2->kind = PLUS;
 				tempcode2->codeinfo.tripleop.op=temp2;
 				tempcode2->codeinfo.tripleop.op1=copyOperand(tempvar2);
 				tempcode2->codeinfo.tripleop.op2=constant_size;
@@ -1162,7 +1330,7 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 				temp1->kind=STAR;
 				temp2->kind=STAR;
 				InterCode *arraycode = (InterCode*)malloc(sizeof(InterCode));
-	    			arraycode->kind = ASSIGN;
+	    		arraycode->kind = ASSIGN;
 				arraycode->codeinfo.doubleop.op1=copyOperand(temp1);
 				arraycode->codeinfo.doubleop.op2=copyOperand(temp2);
 				insertintercode(arraycode);
@@ -1186,18 +1354,19 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 				arraysize=size1;
 			else
 				arraysize=size2;
-			for(int i=0;i<arraysize;i++){
+			for(int i=0;i<arraysize;i++)
+            {
 				Operand *constant_size =(Operand*)malloc(sizeof(Operand));
-	    			constant_size->kind = CONSTANT;
-	    			constant_size->opinfo.constant_value = i*elementsize;
+	    		constant_size->kind = CONSTANT;
+	    		constant_size->opinfo.constant_value = i*elementsize;
 				InterCode *tempcode1 = (InterCode*)malloc(sizeof(InterCode));
-	    			tempcode1->kind = PLUS;
+	    		tempcode1->kind = PLUS;
 				tempcode1->codeinfo.tripleop.op=temp1;
 				tempcode1->codeinfo.tripleop.op1=copyOperand(tempvar1);
 				tempcode1->codeinfo.tripleop.op2=constant_size;
 				insertintercode(tempcode1);
 				InterCode *tempcode2 = (InterCode*)malloc(sizeof(InterCode));
-	    			tempcode2->kind = PLUS;
+	    		tempcode2->kind = PLUS;
 				tempcode2->codeinfo.tripleop.op=temp2;
 				tempcode2->codeinfo.tripleop.op1=copyOperand(tempvar2);
 				tempcode2->codeinfo.tripleop.op2=constant_size;
@@ -1205,7 +1374,7 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 				temp1->kind=STAR;
 				temp2->kind=STAR;
 				InterCode *arraycode = (InterCode*)malloc(sizeof(InterCode));
-	    			arraycode->kind = ASSIGN;
+	    		arraycode->kind = ASSIGN;
 				arraycode->codeinfo.doubleop.op1=copyOperand(temp1);
 				arraycode->codeinfo.doubleop.op2=copyOperand(temp2);
 				insertintercode(arraycode);
@@ -1219,11 +1388,52 @@ void expassignop_intercode(TreeNode *p, Operand *op)
 	else
 	{
 		//code2 [variable.name:=t1]
+        //VC
+        if(openvc == 1)
+        {
+        // if(variableisvc(tempvar1->opinfo.contents)==1)
+        // {
+        //     tempvar1->kind = VARIABLE;
+        //     deletevc(tempvar1->opinfo.contents);
+        // }
+            if(tempvar1->kind == VARIABLE_CONSTANT)
+            {
+                tempvar1->kind = VARIABLE;
+                strcpy(tempvar1->opinfo.contents, p->children[0]->children[0]->contents);
+            }
+        }
+        //endVC
+        Operand *copytempvar1 = copyOperand(tempvar1);
 		InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
-	    	intercode->kind = ASSIGN;
-		intercode->codeinfo.doubleop.op1=tempvar1;
+	    intercode->kind = ASSIGN;
+		intercode->codeinfo.doubleop.op1=copytempvar1;
 		intercode->codeinfo.doubleop.op2=tempvar2;
 		insertintercode(intercode);
+        //VC
+        if(openvc == 1)
+        {
+        // if((tempvar1->kind == VARIABLE || tempvar1->kind == TEMP_VARIABLE) && whilestmt == 0 && ifelsestmt == 0)
+        // {
+        //     if(tempvar2->kind == CONSTANT)
+        //     {
+        //         insertvc(tempvar1->opinfo.contents, tempvar2->opinfo.constant_value);
+        //         tempvar1->kind = VARIABLE_CONSTANT;
+        //     }
+        //     else if(tempvar2->kind == VARIABLE_CONSTANT)
+        //     {
+        //         insertvc(tempvar1->opinfo.contents, getvcvalue(tempvar2->opinfo.contents));
+        //         tempvar1->kind = VARIABLE_CONSTANT;
+        //     }
+        // }
+            if(tempvar1->kind == VARIABLE && whilestmt == 0 && ifelsestmt == 0)
+            {
+                if(tempvar2->kind == CONSTANT || tempvar2->kind == VARIABLE_CONSTANT)
+                    insertvc(tempvar1->opinfo.contents, tempvar2->opinfo.constant_value, 1);
+                else
+                    insertvc(tempvar1->opinfo.contents, 0x80000000, 0);
+            }
+        }
+        //endVC
 	}
 	//code2 [place:=variable.name]
 	op->kind=tempvar1->kind;
@@ -1242,6 +1452,43 @@ void expcalculate_intercode(TreeNode *p, Operand *op)
 	exp_intercode(p->children[0],tempvar1);
 	//code2
 	exp_intercode(p->children[2],tempvar2);
+
+    //VC
+    if(openvc == 1)
+    {
+    if((tempvar1->kind == CONSTANT || tempvar1->kind == VARIABLE_CONSTANT) && (tempvar2->kind == CONSTANT || tempvar2->kind == VARIABLE_CONSTANT))
+    {
+        int t1value;
+        int t2value;
+        // if(tempvar1->kind == CONSTANT)
+        //     t1value = tempvar1->opinfo.constant_value;
+        // else
+        //     t1value = getvcvalue(tempvar1->opinfo.contents);
+        // if(tempvar2->kind == CONSTANT)
+        //     t2value = tempvar2->opinfo.constant_value;
+        // else
+        //     t2value = getvcvalue(tempvar2->opinfo.contents);
+        t1value = tempvar1->opinfo.constant_value;
+        t2value = tempvar2->opinfo.constant_value;
+        int resultvalue = 0;
+        if(strcmp(p->children[1]->type,"PLUS")==0)
+            resultvalue = t1value + t2value;
+	    else if(strcmp(p->children[1]->type,"MINUS")==0)
+		    resultvalue = t1value - t2value;
+	    else if(strcmp(p->children[1]->type,"STAR")==0)
+		    resultvalue = t1value * t2value;
+	    else if(strcmp(p->children[1]->type,"DIV")==0)
+		    resultvalue = t1value / t2value;
+        op->kind = VARIABLE_CONSTANT;
+        //insertvc(op->opinfo.contents, resultvalue);
+        op->opinfo.constant_value = resultvalue;
+        if(printnode_intercode == 1)
+            printf("leave expcalculate_intercode\n");
+        return;
+    }
+    }
+    //endVC
+
 	InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
 	if(strcmp(p->children[1]->type,"PLUS")==0)
 		intercode->kind=PLUS;
@@ -1339,6 +1586,17 @@ void callstruct_intercode(TreeNode *p, Operand *op) //Exp DOT ID
         }
     }
 
+    if(list->typeinfo->kind == ARRAY)
+    {
+        TypeInfo *innertype = list->typeinfo->info.array.element;
+        if(innertype->kind == ARRAY)
+        {
+            if(errorsum == 0)
+                printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
+            errorsum++;
+        }
+    }
+
     if(exp1->kind == STAR)
         exp1->kind = VARIABLE;
     else if(exp1->kind != CONSTANT && structisparameter(exp1->opinfo.contents) == 1)
@@ -1404,6 +1662,14 @@ void callfunc_intercode(TreeNode *p, Operand *op)
     			intercode->kind = WRITE;
 				intercode->codeinfo.singleop.op=args->one_arg;
 				insertintercode(intercode);
+                InterCode *assignic = (InterCode*)malloc(sizeof(InterCode));
+                assignic->kind = ASSIGN;
+                assignic->codeinfo.doubleop.op1 = copyop;
+                Operand *zero = (Operand*)malloc(sizeof(Operand));
+                zero->kind = CONSTANT;
+                zero->opinfo.constant_value = 0;
+                assignic->codeinfo.doubleop.op2 = zero;
+                insertintercode(assignic);
 			}	
 			else
 			{
@@ -1468,6 +1734,9 @@ Args* arg_intercode(TreeNode *p)
 void optimize_intercode()
 {
     delete_duplicate_label();
+    delete_duplicate_goto();
+    delete_duplicate_if();
+    delete_useless_label();
 }
 
 void delete_duplicate_label()
@@ -1544,5 +1813,144 @@ void delete_duplicate_label()
             else
                 p = p->next;
         }
+    }
+}
+
+void delete_duplicate_goto()
+{
+    InterCode *p=listhead;
+    while(p!=NULL)
+    {
+	    if(p->kind==RELOPGOTO)
+	    {
+	        InterCode *relop=p;
+	        InterCode *Goto=p->next;
+	        if(Goto==NULL)
+	        {
+		        p=p->next;
+		        continue;
+	        }
+	        InterCode *Label=Goto->next;
+	        if(Label==NULL)
+	        {
+		        p=p->next;
+		        continue;
+	        }
+	        if(Goto->kind==GOTO&&Label->kind==LABEL_IC&&strcmp(relop->codeinfo.relopgoto.z->opinfo.contents,Label->codeinfo.singleop.op->opinfo.contents)==0)
+	        {
+		        strcpy(relop->codeinfo.relopgoto.z->opinfo.contents,Goto->codeinfo.singleop.op->opinfo.contents);
+		        deleteintercode(Goto);
+		        if(!strcmp(relop->codeinfo.relopgoto.relop,"=="))
+		            strcpy(relop->codeinfo.relopgoto.relop,"!=");	
+		        else if(!strcmp(relop->codeinfo.relopgoto.relop,"!="))
+		            strcpy(relop->codeinfo.relopgoto.relop,"==");
+		        else if(!strcmp(relop->codeinfo.relopgoto.relop,">="))
+		            strcpy(relop->codeinfo.relopgoto.relop,"<");
+		        else if(!strcmp(relop->codeinfo.relopgoto.relop,"<="))
+		            strcpy(relop->codeinfo.relopgoto.relop,">");
+		        else if(!strcmp(relop->codeinfo.relopgoto.relop,">"))
+		            strcpy(relop->codeinfo.relopgoto.relop,"<=");
+		        else if(!strcmp(relop->codeinfo.relopgoto.relop,"<"))
+		            strcpy(relop->codeinfo.relopgoto.relop,">=");
+	        }
+	        p=p->next;
+	    }
+	    else
+	        p=p->next;
+    }	
+}
+
+void delete_useless_label()
+{
+    //find all labelname in if-goto and goto
+    InterCode *p = listhead;
+    for(; p != NULL; p = p->next)
+    {
+        if(p->kind == RELOPGOTO)
+        {
+            insertlabel(p->codeinfo.relopgoto.z->opinfo.contents);
+        }   
+        else if(p->kind == GOTO)
+        {
+            insertlabel(p->codeinfo.singleop.op->opinfo.contents);
+        }
+    }
+    //traverse all LABEL definition, check whether the label is in labeltable
+    p = listhead;
+    while(p != NULL)
+    {
+        if(p->kind == LABEL_IC)
+        {
+            if(checklabel(p->codeinfo.singleop.op->opinfo.contents)==0)
+            {
+                InterCode *q = p;
+                p = p->next;
+                deleteintercode(q);
+            }
+            else
+                p = p->next;
+        }
+        else
+            p = p->next;
+    }
+}
+
+void delete_duplicate_if()
+{
+    InterCode *p = listhead;
+    while(p != NULL)
+    {
+	    if(p->kind == RELOPGOTO)
+	    {
+            if((p->codeinfo.relopgoto.x->kind == CONSTANT || p->codeinfo.relopgoto.x->kind == VARIABLE_CONSTANT)
+                && (p->codeinfo.relopgoto.y->kind == CONSTANT || p->codeinfo.relopgoto.y->kind == VARIABLE_CONSTANT))
+            {
+                int value1 = p->codeinfo.relopgoto.x->opinfo.constant_value;
+                int value2 = p->codeinfo.relopgoto.y->opinfo.constant_value;
+                int ok = 0;
+                if(!strcmp(p->codeinfo.relopgoto.relop,"=="))
+		        {
+                    if(value1 == value2)
+                        ok = 1;
+                }
+		        else if(!strcmp(p->codeinfo.relopgoto.relop,"!="))
+		        {
+                    if(value1 != value2)
+                        ok = 1;
+                }
+		        else if(!strcmp(p->codeinfo.relopgoto.relop,">="))
+		        {
+                    if(value1 >= value2)
+                        ok = 1;
+                }
+		        else if(!strcmp(p->codeinfo.relopgoto.relop,"<="))
+                {
+                    if(value1 <= value2)
+                        ok = 1;
+                }
+		        else if(!strcmp(p->codeinfo.relopgoto.relop,">"))
+		        {
+                    if(value1 > value2)
+                        ok = 1;
+                }
+		        else if(!strcmp(p->codeinfo.relopgoto.relop,"<"))
+		        {
+                    if(value1 < value2)
+                        ok = 1;
+                }
+                if(ok == 0)
+                {
+                    InterCode *q = p;
+                    p = p->next;
+                    deleteintercode(q);
+                }
+                else
+                    p = p->next;
+            }
+            else
+                p = p->next;
+        }
+        else
+            p = p->next;
     }
 }

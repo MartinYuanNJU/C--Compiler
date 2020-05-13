@@ -8,15 +8,15 @@
 typedef enum {LABEL_IC, FUNCTION_IC, ASSIGN, PLUS, SUB, MUL, DIV, GETADDR, RIGHTSTAR, LEFTSTAR, 
               GOTO, RELOPGOTO, RETURN, DEC, ARG, CALL, PARAM, READ, WRITE} InterCodeKind;
 
-typedef enum {TEMP_VARIABLE, VARIABLE, CONSTANT, TEMP_ADDRESS, ADDRESS, STAR, LABEL_OP, FUNCTION_OP, DEFAULT} OperandKind;
+typedef enum {TEMP_VARIABLE, VARIABLE, CONSTANT, TEMP_ADDRESS, ADDRESS, STAR, 
+              LABEL_OP, FUNCTION_OP, VARIABLE_CONSTANT, DEFAULT} OperandKind;
 
 typedef struct Operand
 {
     OperandKind kind;
-    union {
+    struct {
         int constant_value;
         char contents[33];
-        //struct Operand *addr;
     } opinfo;
 
 } Operand;
@@ -66,6 +66,26 @@ typedef struct DuplicateLabel
     struct DuplicateLabel *next;
 } DuplicateLabel;
 
+typedef struct LabelNode
+{
+    char labelname[33];
+    struct LabelNode *next;
+} LabelNode;
+
+typedef struct VCList
+{
+    int vc_value;
+    char vc_contents[33];
+    int valid;
+    struct VCList *next;
+} VCList;
+
+typedef struct VCvalue
+{
+    int value;
+    int valid;
+} VCvalue;
+
 typedef struct Args
 {
 	Operand *one_arg;
@@ -78,6 +98,10 @@ struct InterCode *listtail;
 struct structParameterList *paralisthead;
 
 struct DuplicateLabel *duplabelhead;
+
+struct LabelNode *labeltable[HASH_NUMBER+1];
+
+struct VCList *vclisthead;
 
 int label_no;
 int tempvar_no;
@@ -93,13 +117,18 @@ void insertparalist(char name[33]);
 int structisparameter(char name[33]);
 void clearparalist();
 void printOperand(Operand *op, FILE *fp);
-void printoperand(Operand *op);
 void printIntercode(InterCode *head, FILE *fp);
 void deleteintercode(InterCode *intercode);
 void insertduplablelist(char name[33]);
 int labelisduplicate(char name[33]);
 void clearduplabellist();
-void delete_duplicate_goto();
+void insertlabel(char name[33]);
+int checklabel(char name[33]);
+void insertvc(char name[33], int value, int valid);
+void deletevc(char name[33]);
+int variableisvc(char name[33]);
+VCvalue* getvcvalue(char name[33]);
+
 //generating intercode function
 void generate_intercode(TreeNode *root, FILE *fp);
 void extdeflist_intercode(TreeNode *p);
@@ -130,6 +159,10 @@ void expcalculate_intercode(TreeNode *p, Operand *op);
 void callarray_intercode(TreeNode *p, Operand *op);
 void optimize_intercode();
 void delete_duplicate_label();
+void delete_duplicate_goto();
+void delete_duplicate_if();
+void delete_useless_label();
+
 
 #endif
 
@@ -138,3 +171,5 @@ void delete_duplicate_label();
 // InterCode *intercode = (InterCode*)malloc(sizeof(InterCode));
 // Operand *operand = (Operand*)malloc(sizeof(Operand));
 // structParameterList *stparlist = (structParameterList*)malloc(sizeof(structParameterList));
+// VCList *vcnode = (VCList*)malloc(sizeof(VCList));
+// VCvalue *vcvalue = (VCvalue*)malloc(sizeof(VCvalue));

@@ -88,10 +88,6 @@ test2019d:
 	./parser ../Test/Tests_2-2019/D-3.c
 test2019e:
 	./parser ../Test/Tests_2-2019/E-3.c
-testarray:
-	./parser ../Test/Tests_3-2017/array.cmm ../output/array.ir
-testrelopgoto:
-	./parser ../Test/Tests_3-2017/relopgoto.cmm ../output/relopgoto.ir
 testnormala:
 	./parser ../Test/Tests_3_Normal/Tests/A_1.cmm ../output/a1_normal.ir
 	./parser ../Test/Tests_3_Normal/Tests/A_2.cmm ../output/a2_normal.ir
@@ -111,7 +107,9 @@ testnormale:
 	./parser ../Test/Tests_3_Normal/Tests/E1_1.cmm ../output/e1_1_normal.ir
 	./parser ../Test/Tests_3_Normal/Tests/E1_2.cmm ../output/e1_2_normal.ir
 	./parser ../Test/Tests_3_Normal/Tests/E1_3.cmm ../output/e1_3_normal.ir
-
+	./parser ../Test/Tests_3_Normal/Tests/E2_1.cmm ../output/e2_1_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/E2_2.cmm ../output/e2_2_normal.ir
+	./parser ../Test/Tests_3_Normal/Tests/E2_3.cmm ../output/e2_3_normal.ir
 
 
 clean:

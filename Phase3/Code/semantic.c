@@ -10,7 +10,6 @@ void initsymboltable()
     structnametable = NULL;
     for(int i=0; i<=HASH_NUMBER; i++)
         symboltable[i] = NULL;
-	
 
 	TypeInfo *readtype = (TypeInfo*)malloc(sizeof(TypeInfo));
     readtype->kind = FUNC;
