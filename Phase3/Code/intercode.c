@@ -672,10 +672,6 @@ void funcdec_intercode(TreeNode *p)
             intercode->codeinfo.doubleop.op2 = tempvar;
             insertintercode(intercode);
 
-            //wxy do at line 645
-            /*if(t1->kind==VAR_CONS||t1->kind==CONSTANT)
-                insert_VarconsList(left->u.value,t1->u.var_no);*/
-
             //VC
             if(openvc == 1)
             {
@@ -1026,7 +1022,7 @@ void exp_intercode(TreeNode *p, Operand *op)
 		{
 			if (strcmp(p->children[1]->type, "ASSIGNOP") == 0)
 				expassignop_intercode(p, op);
-			else if (strcmp(p->children[0]->type, "AND") == 0 || strcmp(p->children[0]->type, "OR") == 0)
+			else if (strcmp(p->children[1]->type, "AND") == 0 || strcmp(p->children[1]->type, "OR") == 0)
 				boolexp_intercode(p, op);
 			else if (strcmp(p->children[1]->type, "DOT") == 0)
 				callstruct_intercode(p, op);
@@ -1639,7 +1635,6 @@ void callfunc_intercode(TreeNode *p, Operand *op)
     			intercode->kind = READ;
 				intercode->codeinfo.singleop.op = copyop;
 				insertintercode(intercode);
-			
 			}
 			else
 			{
@@ -1945,7 +1940,12 @@ void delete_duplicate_if()
                     deleteintercode(q);
                 }
                 else
+                {
+                    Operand *gotoaim = p->codeinfo.relopgoto.z;
+                    p->kind = GOTO;
+                    p->codeinfo.singleop.op = gotoaim;
                     p = p->next;
+                }
             }
             else
                 p = p->next;

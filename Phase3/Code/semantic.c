@@ -897,7 +897,7 @@ TypeInfo* Exp(TreeNode *p)
 		{
 			if (strcmp(p->children[1]->type, "ASSIGNOP") == 0)
 				return expassignop(p);
-			else if (strcmp(p->children[0]->type, "AND") == 0 || strcmp(p->children[0]->type, "OR") == 0)
+			else if (strcmp(p->children[1]->type, "AND") == 0 || strcmp(p->children[1]->type, "OR") == 0)
 				return expandor(p);
 			else if (strcmp(p->children[1]->type, "DOT") == 0)
 				return callstruct(p);

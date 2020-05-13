@@ -75,7 +75,7 @@ test2019a:
 	./parser ../Test/Tests_2-2019/A-17.c
 	./parser ../Test/Tests_2-2019/A-18.c
 	./parser ../Test/Tests_2-2019/A-19.c
-	./parser ../Test/Tests_2-2019/A-20.c
+	./parser ../Test/Tests_2-2019/A-20.c8Lab3Hard.1
 test2019b:
 	./parser ../Test/Tests_2-2019/B-1.c
 	./parser ../Test/Tests_2-2019/B-2.c
@@ -86,8 +86,12 @@ test2019d:
 	./parser ../Test/Tests_2-2019/D-1.c
 	./parser ../Test/Tests_2-2019/D-2.c
 	./parser ../Test/Tests_2-2019/D-3.c
-test2019e:
-	./parser ../Test/Tests_2-2019/E-3.c
+testhard:
+	./parser ../Test/Tests_3_Advanced/Tests/8Lab3Hard.2.cmm ../output/8Lab3Hard.2.ir
+testmedium:
+	./parser ../Test/Tests_3_Advanced/Tests/10Lab3Medium.1.cmm ../output/10Lab3Medium.1.ir
+testsimple:
+	./parser ../Test/Tests_3_Advanced/Tests/10Lab3Simple.1.cmm ../output/10Lab3Simple.1.ir
 testnormala:
 	./parser ../Test/Tests_3_Normal/Tests/A_1.cmm ../output/a1_normal.ir
 	./parser ../Test/Tests_3_Normal/Tests/A_2.cmm ../output/a2_normal.ir
