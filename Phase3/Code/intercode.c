@@ -1904,32 +1904,32 @@ void delete_duplicate_if()
                 int value1 = p->codeinfo.relopgoto.x->opinfo.constant_value;
                 int value2 = p->codeinfo.relopgoto.y->opinfo.constant_value;
                 int ok = 0;
-                if(!strcmp(p->codeinfo.relopgoto.relop,"=="))
+                if(strcmp(p->codeinfo.relopgoto.relop,"==")==0)
 		        {
                     if(value1 == value2)
                         ok = 1;
                 }
-		        else if(!strcmp(p->codeinfo.relopgoto.relop,"!="))
+		        else if(strcmp(p->codeinfo.relopgoto.relop,"!=")==0)
 		        {
                     if(value1 != value2)
                         ok = 1;
                 }
-		        else if(!strcmp(p->codeinfo.relopgoto.relop,">="))
+		        else if(strcmp(p->codeinfo.relopgoto.relop,">=")==0)
 		        {
                     if(value1 >= value2)
                         ok = 1;
                 }
-		        else if(!strcmp(p->codeinfo.relopgoto.relop,"<="))
+		        else if(strcmp(p->codeinfo.relopgoto.relop,"<=")==0)
                 {
                     if(value1 <= value2)
                         ok = 1;
                 }
-		        else if(!strcmp(p->codeinfo.relopgoto.relop,">"))
+		        else if(strcmp(p->codeinfo.relopgoto.relop,">")==0)
 		        {
                     if(value1 > value2)
                         ok = 1;
                 }
-		        else if(!strcmp(p->codeinfo.relopgoto.relop,"<"))
+		        else if(strcmp(p->codeinfo.relopgoto.relop,"<")==0)
 		        {
                     if(value1 < value2)
                         ok = 1;
