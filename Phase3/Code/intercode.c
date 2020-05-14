@@ -443,6 +443,7 @@ void generate_intercode(TreeNode *root, FILE *fp)
 	if(errorsum == 0)
     {
         optimize_intercode();
+	
         printIntercode(listhead, fp);
     }
 }
@@ -1835,17 +1836,17 @@ void delete_duplicate_goto()
 	        {
 		        strcpy(relop->codeinfo.relopgoto.z->opinfo.contents,Goto->codeinfo.singleop.op->opinfo.contents);
 		        deleteintercode(Goto);
-		        if(!strcmp(relop->codeinfo.relopgoto.relop,"=="))
+		        if(strcmp(relop->codeinfo.relopgoto.relop,"==")==0)
 		            strcpy(relop->codeinfo.relopgoto.relop,"!=");	
-		        else if(!strcmp(relop->codeinfo.relopgoto.relop,"!="))
+		        else if(strcmp(relop->codeinfo.relopgoto.relop,"!=")==0)
 		            strcpy(relop->codeinfo.relopgoto.relop,"==");
-		        else if(!strcmp(relop->codeinfo.relopgoto.relop,">="))
+		        else if(strcmp(relop->codeinfo.relopgoto.relop,">=")==0)
 		            strcpy(relop->codeinfo.relopgoto.relop,"<");
-		        else if(!strcmp(relop->codeinfo.relopgoto.relop,"<="))
+		        else if(strcmp(relop->codeinfo.relopgoto.relop,"<=")==0)
 		            strcpy(relop->codeinfo.relopgoto.relop,">");
-		        else if(!strcmp(relop->codeinfo.relopgoto.relop,">"))
+		        else if(strcmp(relop->codeinfo.relopgoto.relop,">")==0)
 		            strcpy(relop->codeinfo.relopgoto.relop,"<=");
-		        else if(!strcmp(relop->codeinfo.relopgoto.relop,"<"))
+		        else if(strcmp(relop->codeinfo.relopgoto.relop,"<")==0)
 		            strcpy(relop->codeinfo.relopgoto.relop,">=");
 	        }
 	        p=p->next;
