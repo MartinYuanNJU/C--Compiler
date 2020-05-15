@@ -33,6 +33,8 @@ syntax-c: $(YFILE)
 
 # 定义的一些伪目标
 .PHONY: clean test
+test:
+	./parser ../Test/test1.cmm ../Test/test1.ir
 test2017a:
 	./parser ../Test/Tests_3-2017/official-A-1.cmm ../output/a1.ir
 	./parser ../Test/Tests_3-2017/official-A-2.cmm ../output/a2.ir
@@ -55,43 +57,11 @@ test2017e:
 	./parser ../Test/Tests_3-2017/official-E2-1.cmm ../output/e21.ir
 	./parser ../Test/Tests_3-2017/official-E2-2.cmm ../output/e22.ir
 	./parser ../Test/Tests_3-2017/official-E2-3.cmm ../output/e23.ir
-test2019a:
-	./parser ../Test/Tests_2-2019/A-1.c
-	./parser ../Test/Tests_2-2019/A-2.c
-	./parser ../Test/Tests_2-2019/A-3.c
-	./parser ../Test/Tests_2-2019/A-4.c
-	./parser ../Test/Tests_2-2019/A-5.c
-	./parser ../Test/Tests_2-2019/A-6.c
-	./parser ../Test/Tests_2-2019/A-7.c
-	./parser ../Test/Tests_2-2019/A-8.c
-	./parser ../Test/Tests_2-2019/A-9.c
-	./parser ../Test/Tests_2-2019/A-10.c
-	./parser ../Test/Tests_2-2019/A-11.c
-	./parser ../Test/Tests_2-2019/A-12.c
-	./parser ../Test/Tests_2-2019/A-13.c
-	./parser ../Test/Tests_2-2019/A-14.c
-	./parser ../Test/Tests_2-2019/A-15.c
-	./parser ../Test/Tests_2-2019/A-16.c
-	./parser ../Test/Tests_2-2019/A-17.c
-	./parser ../Test/Tests_2-2019/A-18.c
-	./parser ../Test/Tests_2-2019/A-19.c
-	./parser ../Test/Tests_2-2019/A-20.c8Lab3Hard.1
-test2019b:
-	./parser ../Test/Tests_2-2019/B-1.c
-	./parser ../Test/Tests_2-2019/B-2.c
-test2019c:
-	./parser ../Test/Tests_2-2019/C-1.c
-	./parser ../Test/Tests_2-2019/C-2.c	
-test2019d:
-	./parser ../Test/Tests_2-2019/D-1.c
-	./parser ../Test/Tests_2-2019/D-2.c
-	./parser ../Test/Tests_2-2019/D-3.c
 testhard:
-	./parser ../Test/Tests_3_Advanced/Tests/8Lab3Hard.2.cmm ../output/8Lab3Hard.2.ir
-testmedium:
-	./parser ../Test/Tests_3_Advanced/Tests/10Lab3Medium.1.cmm ../output/10Lab3Medium.1.ir
-testsimple:
-	./parser ../Test/Tests_3_Advanced/Tests/10Lab3Simple.1.cmm ../output/10Lab3Simple.1.ir
+	./parser ../Test/Tests_hard/8Lab3Hard.0.cmm ../output/8Lab3Hard.0.ir
+	./parser ../Test/Tests_hard/8Lab3Hard.1.cmm ../output/8Lab3Hard.1.ir
+	./parser ../Test/Tests_hard/8Lab3Hard.2.cmm ../output/8Lab3Hard.2.ir
+	./parser ../Test/Tests_hard/impossible1.cmm ../output/impossible1.ir
 testnormala:
 	./parser ../Test/Tests_3_Normal/Tests/A_1.cmm ../output/a1_normal.ir
 	./parser ../Test/Tests_3_Normal/Tests/A_2.cmm ../output/a2_normal.ir

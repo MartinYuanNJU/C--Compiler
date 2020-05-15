@@ -443,7 +443,6 @@ void generate_intercode(TreeNode *root, FILE *fp)
 	if(errorsum == 0)
     {
         optimize_intercode();
-	
         printIntercode(listhead, fp);
     }
 }

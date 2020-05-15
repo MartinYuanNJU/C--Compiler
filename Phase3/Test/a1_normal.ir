@@ -1,0 +1,16 @@
+FUNCTION main :
+t := #12
+pp := #4
+tt := #5
+a := #48
+b := #49
+c := #244
+WRITE #244
+TEMPVAR23 := #0
+c := #946
+b := #1043
+WRITE #946
+TEMPVAR47 := #0
+WRITE #1043
+TEMPVAR49 := #0
+RETURN #0

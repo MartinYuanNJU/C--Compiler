@@ -1,0 +1,13 @@
+FUNCTION main :
+final := #0
+a := #5
+b := #175
+WRITE #175
+TEMPVAR14 := #0
+c := #36
+WRITE #36
+TEMPVAR23 := #0
+final := #103
+WRITE #103
+TEMPVAR40 := #0
+RETURN #0

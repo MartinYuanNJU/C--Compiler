@@ -1,0 +1,17 @@
+FUNCTION main :
+DEC burger 8
+DEC cola 8
+TEMPVAR2 := &burger + #0
+*TEMPVAR2 := #1
+TEMPVAR6 := &burger + #4
+*TEMPVAR6 := #2
+TEMPVAR10 := &cola + #0
+*TEMPVAR10 := #3
+TEMPVAR14 := &cola + #4
+*TEMPVAR14 := #4
+TEMPVAR19 := &cola + #0
+TEMPVAR20 := &burger + #4
+TEMPVAR18 := *TEMPVAR19 + *TEMPVAR20
+WRITE TEMPVAR18
+TEMPVAR17 := #0
+RETURN #0
