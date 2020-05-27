@@ -1,4 +1,4 @@
-# C--Complier
+# C--Compiler
 A simple complier which can compile C-- program.
 
 一个简单的可以编译C--程序的编译器（编译原理课程项目）
