@@ -1,5 +1,7 @@
 #include "objectcode.h"
 
+int argnum;
+
 //supplement tool function
 void printdata(FILE *fp)
 {
@@ -200,6 +202,8 @@ void generate_objectcode(FILE *fp)
 
     vardeshead = NULL;
 
+    argnum = 0;
+
     //generate_intercode
     for(InterCode *p=listhead; p!=NULL; p=p->next)
     {
@@ -210,45 +214,27 @@ void generate_objectcode(FILE *fp)
         else if(p->kind == ASSIGN)
             assgin_objectcode(p, fp);
         else if(p->kind == PLUS)
-        {
-            
-        }
+            plus_objectcode(p, fp);
         else if(p->kind == SUB)
-        {
-            
-        }
+            sub_objectcode(p, fp);
         else if(p->kind == MUL)
-        {
-
-        }
+            mul_objectcode(p, fp);
         else if(p->kind == DIV)
-        {
-
-        }
+            div_objectcode(p, fp);
         else if(p->kind == GOTO)
-        {
-
-        }
+            goto_objectcode(p, fp);
         else if(p->kind == RELOPGOTO)
-        {
-
-        }
+            relopgoto_objectcode(p, fp);
         else if(p->kind == RETURN)
-        {
-
-        }
+            return_objectcode(p, fp);
         else if(p->kind == DEC)
         {
 
         }
         else if(p->kind == ARG)
-        {
-
-        }
+            arg_objectcode(p, fp);
         else if(p->kind == CALL)
-        {
-
-        }
+            call_objectcode(p, fp);
         else if(p->kind == PARAM)
         {
 
@@ -261,7 +247,6 @@ void generate_objectcode(FILE *fp)
         {
 
         }
-        fprintf(fp, "\n");
     }
 }
 
@@ -303,4 +288,80 @@ void assgin_objectcode(InterCode *p, FILE *fp)
     {
         printf("unhandled situation at assgin_objectcode, left operand type: %d\n", p->codeinfo.doubleop.op1->kind);
     }
+}
+
+void plus_objectcode(InterCode *p, FILE *fp)
+{
+
+}
+
+void sub_objectcode(InterCode *p, FILE *fp)
+{
+
+}
+
+void mul_objectcode(InterCode *p, FILE *fp)
+{
+
+}
+
+void div_objectcode(InterCode *p, FILE *fp)
+{
+
+}
+
+void goto_objectcode(InterCode *p, FILE *fp)
+{
+    fprintf(fp, "j %s\n", p->codeinfo.singleop.op->opinfo.contents);
+}
+
+void relopgoto_objectcode(InterCode *p, FILE *fp)
+{
+    int xreg = assgin_register();
+    int yreg = assgin_register();
+    read_from_memory(xreg, p->codeinfo.relopgoto.x, fp);
+    read_from_memory(yreg, p->codeinfo.relopgoto.y, fp);
+    char relop[33];
+    strcpy(relop, p->codeinfo.relopgoto.relop);
+    if(strcmp(relop, "==") == 0)
+    {
+        fprintf(fp, "beq %s, %s, %s\n", regs[xreg].register_name, regs[yreg].register_name, p->codeinfo.relopgoto.z->opinfo.contents);
+    }
+    else if(strcmp(relop, "!=") == 0)
+    {
+        fprintf(fp, "bne %s, %s, %s\n", regs[xreg].register_name, regs[yreg].register_name, p->codeinfo.relopgoto.z->opinfo.contents);
+    }
+    else if(strcmp(relop, ">") == 0)
+    {
+        fprintf(fp, "bgt %s, %s, %s\n", regs[xreg].register_name, regs[yreg].register_name, p->codeinfo.relopgoto.z->opinfo.contents);
+    }
+    else if(strcmp(relop, "<") == 0)
+    {
+        fprintf(fp, "blt %s, %s, %s\n", regs[xreg].register_name, regs[yreg].register_name, p->codeinfo.relopgoto.z->opinfo.contents);
+    }
+    else if(strcmp(relop, ">=") == 0)
+    {
+        fprintf(fp, "bge %s, %s, %s\n", regs[xreg].register_name, regs[yreg].register_name, p->codeinfo.relopgoto.z->opinfo.contents);
+    }
+    else if(strcmp(relop, "<=") == 0)
+    {
+        fprintf(fp, "ble %s, %s, %s\n", regs[xreg].register_name, regs[yreg].register_name, p->codeinfo.relopgoto.z->opinfo.contents);
+    }
+    free_register(xreg);
+    free_register(yreg);
+}
+
+void return_objectcode(InterCode *p, FILE *fp)
+{
+
+}
+
+void arg_objectcode(InterCode *p, FILE *fp)
+{
+
+}
+
+void call_objectcode(InterCode *p, FILE *fp)
+{
+
 }

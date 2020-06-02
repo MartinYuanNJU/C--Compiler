@@ -46,6 +46,15 @@ void generate_objectcode(FILE *fp);
 void label_objectcode(InterCode *p, FILE *fp);
 void function_objectcode(InterCode *p, FILE *fp);
 void assgin_objectcode(InterCode *p, FILE *fp);
+void plus_objectcode(InterCode *p, FILE *fp);
+void sub_objectcode(InterCode *p, FILE *fp);
+void mul_objectcode(InterCode *p, FILE *fp);
+void div_objectcode(InterCode *p, FILE *fp);
+void goto_objectcode(InterCode *p, FILE *fp);
+void relopgoto_objectcode(InterCode *p, FILE *fp);
+void return_objectcode(InterCode *p, FILE *fp);
+void arg_objectcode(InterCode *p, FILE *fp);
+void call_objectcode(InterCode *p, FILE *fp);
 
 #endif
 
