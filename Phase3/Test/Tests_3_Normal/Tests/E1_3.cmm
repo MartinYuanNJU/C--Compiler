@@ -1,36 +1,46 @@
-struct Student{
-	int name[10];
-	int grade[10];
+struct Worker
+{
+    int id;
+    int salary;
+    int group;
 };
 
-struct Class{
-	struct Student students;
-	int average;
+struct Group
+{
+    int group_id;
+    struct Worker workers[10];
+    int avg_salary;
 };
 
-int isStudentInClass(struct Class ccc, struct Student stu) {
-	int ii = 0;
-	while (ii < 10) {
-		if (ccc.students.name[ii] == stu.name[0]) {
-			return ccc.students.grade[ii];
-		}
-		ii = ii + 1;
-	}
-	return 0;
+int calculate_avg(struct Group g) 
+{
+    int sum = 0, k = 0;
+    while (k < 10) 
+    {
+        sum = sum + g.workers[k].salary;
+        k = k + 1;
+    }
+    g.avg_salary = sum / 10;
+    return g.avg_salary;
 }
-
-int main() {
-	struct Class cl;
-	int i = 0, result;
-	struct Student ss;
-	ss.name[0] = read();
-	ss.grade[0] = 0;
-	cl.average = 0;
-	while (i < 10) {
-		cl.students.name[i] = i;
-		cl.students.grade[i] = i * i;
-		i = i + 1;
-	}
-	write(isStudentInClass(cl,ss));
-	return 0;
-} 
+int main()
+{
+    struct Group company[5];
+    int i = 0 , j, avg = 0;
+    while(i < 5)
+    {
+        j = 0;
+        company[i].group_id = i;
+        while (j < 10)
+        {
+            company[i].workers[j].salary = 3000 + i * 100 + j * 150;
+            j = j + 1;
+        }
+	company[i].avg_salary = calculate_avg(company[i]);
+        avg = avg + company[i].avg_salary;
+        i = i + 1;
+    }
+    avg = avg / 5;
+    write(avg);
+    return 0;
+}

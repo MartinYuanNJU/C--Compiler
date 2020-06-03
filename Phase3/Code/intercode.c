@@ -3,7 +3,7 @@
 extern int errorsum;
 int printnode_intercode = 0;
 
-int openvc = 1;
+int openvc = 0;
 
 int whilecond;
 int whilestmt;
@@ -328,6 +328,18 @@ void printOperand(Operand *op, FILE *fp)
         fprintf(fp, "*%s",op->opinfo.contents);
     else
         fprintf(fp, "%s",op->opinfo.contents);
+}
+
+void PrintOperand(Operand *op)
+{
+    if(op->kind == CONSTANT || op->kind == VARIABLE_CONSTANT)
+        printf( "#%d",op->opinfo.constant_value);
+    else if(op->kind == TEMP_ADDRESS || op->kind == ADDRESS)
+        printf("&%s",op->opinfo.contents);
+    else if(op->kind == STAR)
+        printf( "*%s",op->opinfo.contents);
+    else
+        printf( "%s",op->opinfo.contents);
 }
 
 void printIntercode(InterCode *head, FILE *fp)
@@ -1704,8 +1716,10 @@ Args* arg_intercode(TreeNode *p)
 		Operand *tempvar = newOperand(TEMP_VARIABLE);
 		exp_intercode(q->children[0],tempvar);
 		TypeInfo *type = Exp(q->children[0]);
-		if(type->kind == STRUCT)
+		if(type->kind == STRUCT&&tempvar->kind==VARIABLE)
 			tempvar->kind = ADDRESS;
+		else if(type->kind == STRUCT&&tempvar->kind==STAR)
+			tempvar->kind = VARIABLE;
 		Args *arg=(Args*)malloc(sizeof(Args));
 		arg->one_arg=tempvar;
 		arg->next=args;
@@ -1715,8 +1729,10 @@ Args* arg_intercode(TreeNode *p)
 	Operand *tempvar = newOperand(TEMP_VARIABLE);
 	exp_intercode(q->children[0],tempvar);
 	TypeInfo *type = Exp(q->children[0]);
-	if(type->kind == STRUCT)
-		tempvar->kind=ADDRESS;
+	if(type->kind == STRUCT&&tempvar->kind==VARIABLE)
+		tempvar->kind = ADDRESS;
+	else if(type->kind == STRUCT&&tempvar->kind==STAR)
+		tempvar->kind = VARIABLE;
 	Args *arg = (Args*)malloc(sizeof(Args));
 	arg->one_arg = tempvar;
 	arg->next = args;

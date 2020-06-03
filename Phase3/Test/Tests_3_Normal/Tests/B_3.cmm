@@ -1,48 +1,47 @@
-int isPrime(int number) {
-	int max = number / 4;
-	int i = 2;
-	while(i < max) {
-		if (number == number / i * i) {
-			return 0;
-		}
-		i = i + 1;
-	}
-	return 1;
+int Joseph(int LEN)
+{
+    int a[100];
+    int i = 0;
+    int leftCount = LEN;
+    int index = 0,count = 0;
+    while (i < LEN)
+    {
+        a[i] = 1;
+        i = i + 1;
+    }
+
+    while(leftCount > 2)
+    {
+        if(a[index] == 1)
+        { 
+            count = count + 1; 
+            if(3 == count)
+            {
+                a[index] = 0;
+                count = 0;
+                leftCount = leftCount - 1;
+            }
+        }
+        index = index + 1;
+
+        if(index == LEN)
+            index = 0;
+    }
+    i = 0;
+    while (i < LEN)
+    {
+        if(1 == a[i])
+            write(i+1); 
+        i = i + 1;
+    }
+    return 0;
 }
-
-int isRever(int num) {
-	int n = num;
-	int array[10];
-	int bit = 0, j = 0;
-	while (n != 0) {
-		array[bit] = n - n / 10 * 10;
-		n = n / 10;
-		bit = bit + 1;
-	}
-	bit = bit - 1;
-	while (j != bit) {
-		if (array[j] != array[bit]){
-			return 0;
-		}
-		j = j + 1;
-		bit = bit -1;
-	}
-	return 1;
+int main()
+{
+    int N;
+    N = read();
+    if (! (N > 3 && N <= 100))
+        write(-1);
+    else Joseph(N);
+    return 0;
 }
-
-int main(){
-	int N = 100, M = 110;
-	int ii = N;
-	while (ii < M) {
-		if (isPrime(ii) == 1) {
-			write(ii);
-		}
-		if (isRever(ii) == 1) {
-			write(-ii);
-		}
-		ii = ii + 1;
-	}
-	return 0;
-}
-
-
