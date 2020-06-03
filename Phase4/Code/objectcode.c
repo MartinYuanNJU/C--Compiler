@@ -176,7 +176,14 @@ void insert_operand(Operand *operand)
 {
     if(operand->kind == CONSTANT || operand->kind == VARIABLE_CONSTANT)
         return;
-    
+    VariableDescripter *vardescripter = getvardescripter(operand);
+    if(vardescripter != NULL)
+        return;
+    VariableDescripter *vd = (VariableDescripter*)malloc(sizeof(VariableDescripter));
+    vd->operand = copyOperand(operand);
+    variable_offset -= 4;
+    vd->offset = variable_offset + OFFSET_CORRECT;
+    insert_vardescripter(vd);
 }
 
 void clear_vardescripter(VariableDescripter *head)
@@ -231,6 +238,8 @@ void generate_objectcode(FILE *fp)
     vardeshead = NULL;
 
     argnum = 0;
+
+    variable_offset = 0;
 
     //generate_intercode
     for(InterCode *p=listhead; p!=NULL; p=p->next)
@@ -290,21 +299,20 @@ void function_objectcode(InterCode *p, FILE *fp)
     variable_offset = 0;
     int paraoffset = 0;
     p = p->next;
-    while(p != NULL && p->kind == PARAM)
+    for(; p != NULL && p->kind == PARAM; p = p->next)
     {
         VariableDescripter *vd = (VariableDescripter*)malloc(sizeof(VariableDescripter));
         vd->operand = copyOperand(p->codeinfo.singleop.op);
         vd->offset = paraoffset;
         insert_vardescripter(vd);
         paraoffset += 4;
-        p = p->next;
     }
-    InterCode *q = p;
-    while(q != NULL && q->kind != FUNCTION_IC)
+    for(InterCode *q = p; q != NULL && q->kind != FUNCTION_IC; q = q->next)
     {
         if(q->kind == ASSIGN)
         {
-            
+            insert_operand(p->codeinfo.doubleop.op1);
+            insert_operand(p->codeinfo.doubleop.op2);
         }
         else if(q->kind == PLUS)
         {
@@ -322,10 +330,6 @@ void function_objectcode(InterCode *p, FILE *fp)
         {
 
         }
-        else if(q->kind == GOTO)
-        {
-
-        }
         else if(q->kind == RELOPGOTO)
         {
 
@@ -336,7 +340,11 @@ void function_objectcode(InterCode *p, FILE *fp)
         }
         else if(q->kind == DEC)
         {
-
+            variable_offset -= q->codeinfo.dec.size;
+            VariableDescripter *vd = (VariableDescripter*)malloc(sizeof(VariableDescripter));
+            vd->operand = copyOperand(q->codeinfo.dec.op);
+            vd->offset = variable_offset + OFFSET_CORRECT;
+            insert_vardescripter(vd);
         }
         else if(q->kind == ARG)
         {
@@ -345,10 +353,6 @@ void function_objectcode(InterCode *p, FILE *fp)
         else if(q->kind == CALL)
         {
             
-        }
-        else if(q->kind == PARAM)
-        {
-
         }
         else if(q->kind == READ)
         {
@@ -359,6 +363,8 @@ void function_objectcode(InterCode *p, FILE *fp)
 
         }
     }
+    //assign stack space for these variables
+    fprintf(fp, "addi $sp, $sp, %d\n", variable_offset);
 }
 
 void assgin_objectcode(InterCode *p, FILE *fp)
