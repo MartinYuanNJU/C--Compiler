@@ -1,6 +1,9 @@
 #include "objectcode.h"
+#define OFFSET_CORRECT -8
 
 int argnum;
+
+int variable_offset;
 
 //supplement tool function
 void printdata(FILE *fp)
@@ -8,7 +11,9 @@ void printdata(FILE *fp)
     fprintf(fp, ".data\n");
     fprintf(fp, "_prompt: .asciiz \"Enter an integer:\"\n");
     fprintf(fp, "_ret: .asciiz \"\\n\"\n");
+    fprintf(fp, "\n");
     fprintf(fp, ".globl main\n");
+    fprintf(fp, "\n");
     fprintf(fp, ".text\n");
     fprintf(fp, "read:\n");
     fprintf(fp, "li $v0, 4\n");
@@ -25,7 +30,7 @@ void printdata(FILE *fp)
     fprintf(fp, "la $a0, _ret\n");
     fprintf(fp, "syscall\n");
     fprintf(fp, "move $v0, $0\n");
-    fprintf(fp, "jr $ra\n\n");
+    fprintf(fp, "jr $ra\n");
 }
 
 void initialize_register()
@@ -109,6 +114,22 @@ void free_register(int reg_id)
     }
 }
 
+void freeall_register()
+{
+    for(int i=8; i<=15; i++)
+    {
+        free_register(i);
+    }
+    for(int i=24; i<=25; i++)
+    {
+        free_register(i);
+    }
+    for(int i=16; i<=23; i++)
+    {
+        free_register(i);
+    }
+}
+
 void read_from_memory(int reg_id, Operand *operand, FILE *fp)
 {
     if(operand->kind == CONSTANT || operand->kind == VARIABLE_CONSTANT)
@@ -151,17 +172,24 @@ void insert_vardescripter(VariableDescripter *vardescripter)
     vardeshead = vardescripter;
 }
 
+void insert_operand(Operand *operand)
+{
+    if(operand->kind == CONSTANT || operand->kind == VARIABLE_CONSTANT)
+        return;
+    
+}
+
 void clear_vardescripter(VariableDescripter *head)
 {
     while(head != NULL)
     {
         VariableDescripter *p = head;
         head = head->next;
-        // if(p->operand != NULL)
-        // {
-        //     free(p->operand);
-        //     p->operand = NULL;
-        // }
+        if(p->operand != NULL)
+        {
+            free(p->operand);
+            p->operand = NULL;
+        }
         free(p);
     }
 }
@@ -257,7 +285,80 @@ void label_objectcode(InterCode *p, FILE *fp)
 
 void function_objectcode(InterCode *p, FILE *fp)
 {
+    fprintf(fp, "\n%s:\n", p->codeinfo.singleop.op->opinfo.contents);
+    clear_vardescripter(vardeshead);
+    variable_offset = 0;
+    int paraoffset = 0;
+    p = p->next;
+    while(p != NULL && p->kind == PARAM)
+    {
+        VariableDescripter *vd = (VariableDescripter*)malloc(sizeof(VariableDescripter));
+        vd->operand = copyOperand(p->codeinfo.singleop.op);
+        vd->offset = paraoffset;
+        insert_vardescripter(vd);
+        paraoffset += 4;
+        p = p->next;
+    }
+    InterCode *q = p;
+    while(q != NULL && q->kind != FUNCTION_IC)
+    {
+        if(q->kind == ASSIGN)
+        {
+            
+        }
+        else if(q->kind == PLUS)
+        {
 
+        }
+        else if(q->kind == SUB)
+        {
+
+        }
+        else if(q->kind == MUL)
+        {
+
+        }
+        else if(q->kind == DIV)
+        {
+
+        }
+        else if(q->kind == GOTO)
+        {
+
+        }
+        else if(q->kind == RELOPGOTO)
+        {
+
+        }
+        else if(q->kind == RETURN)
+        {
+
+        }
+        else if(q->kind == DEC)
+        {
+
+        }
+        else if(q->kind == ARG)
+        {
+            
+        }
+        else if(q->kind == CALL)
+        {
+            
+        }
+        else if(q->kind == PARAM)
+        {
+
+        }
+        else if(q->kind == READ)
+        {
+
+        }
+        else if(q->kind == WRITE)
+        {
+
+        }
+    }
 }
 
 void assgin_objectcode(InterCode *p, FILE *fp)
@@ -353,15 +454,57 @@ void relopgoto_objectcode(InterCode *p, FILE *fp)
 
 void return_objectcode(InterCode *p, FILE *fp)
 {
-
+    //get return address
+    fprintf(fp, "lw $ra, -4($fp)\n");
+    //recover $sp value
+    fprintf(fp, "move $sp, $fp\n");
+    //get the reg of the return value (here has old $fp)
+    int regid = assgin_register();
+    read_from_memory(regid, p->codeinfo.doubleop.op1, fp);
+    //recover $fp value;
+    fprintf(fp, "lw $fp, -8($fp)\n");
+    //get return value into $v0
+    fprintf(fp, "move $v0, %s\n", regs[regid].register_name);
+    //jump to return address
+    fprintf(fp, "jr $ra\n");
+    //free all register
+    freeall_register();
 }
 
 void arg_objectcode(InterCode *p, FILE *fp)
 {
-
+    //develop a space in stack for the argument
+    fprintf(fp, "addi $sp, $sp, -4\n");
+    //then get the argument into a register
+    int regid = assgin_register();
+    read_from_memory(regid, p->codeinfo.singleop.op, fp);
+    //then move the register's value into the stack
+    fprintf(fp, "sw %s, 0($sp)\n", regs[regid].register_name);
+    //then free this register
+    free_register(regid);
+    //then argument number increase one
+    argnum++;
 }
 
 void call_objectcode(InterCode *p, FILE *fp)
 {
+    //save return address
+    fprintf(fp, "addi $sp, $sp, -4\n");
+    fprintf(fp, "sw $ra, 0($sp)\n");
+    //save this function's fp
+    fprintf(fp, "addi $sp, $sp, -4\n");
+    fprintf(fp, "sw $fp, 0($sp)\n");
+    //make fp points to new stack frame
+    fprintf(fp, "move $fp, $sp\n");
+    fprintf(fp, "addi $fp, $fp, 8\n");
 
+    int leftreg = assgin_register();
+    int rightreg = assgin_register();
+    fprintf(fp, "jal %s\n", p->codeinfo.doubleop.op2->opinfo.contents);
+    int regid = assgin_register();
+    read_from_memory(regid, p->codeinfo.doubleop.op1, fp);
+    fprintf(fp, "move %s, $v0\n", regs[regid].register_name);
+    argnum *= 4;
+    fprintf(fp, "addi $sp, $sp, %d\n", argnum);
+    argnum = 0;
 }
