@@ -40,13 +40,15 @@ void free_register(int reg_id);
 void freeall_register();
 void insert_vardescripter(VariableDescripter *vardescripter);
 void insert_operand(Operand *operand);
-void clear_vardescripter(VariableDescripter *head);
+void clear_vardescripter();
 VariableDescripter* getvardescripter(Operand *operand);
 VariableDescripter* copyVarDes(VariableDescripter *vd);
 
+void printOperand_commandline(Operand *op);
+void printOperand_commandlineenter(Operand *op);
+void printIntercode_commandline(InterCode *p);
+
 void generate_objectcode(FILE *fp);
-void read_objectcode(InterCode *p, FILE *fp);
-void write_objectcode(InterCode *p, FILE *fp);
 void label_objectcode(InterCode *p, FILE *fp);
 void function_objectcode(InterCode *p, FILE *fp);
 void assgin_objectcode(InterCode *p, FILE *fp);
@@ -59,6 +61,8 @@ void relopgoto_objectcode(InterCode *p, FILE *fp);
 void return_objectcode(InterCode *p, FILE *fp);
 void arg_objectcode(InterCode *p, FILE *fp);
 void call_objectcode(InterCode *p, FILE *fp);
+void read_objectcode(InterCode *p, FILE *fp);
+void write_objectcode(InterCode *p, FILE *fp);
 
 #endif
 

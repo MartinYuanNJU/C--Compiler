@@ -323,7 +323,7 @@ void printOperand(Operand *op, FILE *fp)
     if(op->kind == CONSTANT || op->kind == VARIABLE_CONSTANT)
         fprintf(fp, "#%d",op->opinfo.constant_value);
     else if(op->kind == TEMP_ADDRESS || op->kind == ADDRESS)
-        fprintf(fp,"&%s",op->opinfo.contents);
+        fprintf(fp, "&%s",op->opinfo.contents);
     else if(op->kind == STAR)
         fprintf(fp, "*%s",op->opinfo.contents);
     else
