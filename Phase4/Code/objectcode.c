@@ -264,26 +264,14 @@ void generate_objectcode(FILE *fp)
             relopgoto_objectcode(p, fp);
         else if(p->kind == RETURN)
             return_objectcode(p, fp);
-        else if(p->kind == DEC)
-        {
-
-        }
         else if(p->kind == ARG)
             arg_objectcode(p, fp);
         else if(p->kind == CALL)
             call_objectcode(p, fp);
-        else if(p->kind == PARAM)
-        {
-	    
-        }
         else if(p->kind == READ)
-        {
 	    read_objectcode(p, fp);
-        }
         else if(p->kind == WRITE)
-        {
 	    write_objectcode(p, fp);
-        }
     }
 }
 
