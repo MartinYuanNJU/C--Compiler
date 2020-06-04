@@ -45,6 +45,8 @@ VariableDescripter* getvardescripter(Operand *operand);
 VariableDescripter* copyVarDes(VariableDescripter *vd);
 
 void generate_objectcode(FILE *fp);
+void read_objectcode(InterCode *p, FILE *fp);
+void write_objectcode(InterCode *p, FILE *fp);
 void label_objectcode(InterCode *p, FILE *fp);
 void function_objectcode(InterCode *p, FILE *fp);
 void assgin_objectcode(InterCode *p, FILE *fp);

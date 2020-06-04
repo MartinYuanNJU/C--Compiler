@@ -274,17 +274,45 @@ void generate_objectcode(FILE *fp)
             call_objectcode(p, fp);
         else if(p->kind == PARAM)
         {
-
+	    
         }
         else if(p->kind == READ)
         {
-
+	    read_objectcode(p, fp);
         }
         else if(p->kind == WRITE)
         {
-
+	    write_objectcode(p, fp);
         }
     }
+}
+
+void read_objectcode(InterCode *p, FILE *fp)
+{
+	fprintf(fp, "addi $sp, $sp, -4\n");
+	fprintf(fp, "sw $ra, 0($sp)\n");
+	fprintf(fp, "jal read\n");
+	fprintf(fp, "lw $ra, 0($sp)\n");
+	fprintf(fp, "addi $sp, $sp, -4\n");
+	int res = assgin_register();
+        read_from_memory(res, p->codeinfo.singleop.op, fp);
+	fprintf(fp, "move %s, $v0\n",regs[res].register_name);
+	fprintf(fp, "sw %s, %d($fp)\n", regs[res].register_name, regs[res].vardescripter->offset);
+	free_register(res);
+}
+
+void write_objectcode(InterCode *p, FILE *fp)
+{
+	int res = assgin_register();
+        read_from_memory(res, p->codeinfo.singleop.op, fp);
+	fprintf(fp, "moce $a0, %s\n", regs[res].register_name);
+	fprintf(fp, "addi $sp, $sp, -4\n");
+	fprintf(fp, "sw $ra, 0($sp)\n");
+	fprintf(fp, "jal write\n");
+	fprintf(fp, "lw $ra, 0($sp)\n");
+	fprintf(fp, "addi $sp, $sp, -4\n");
+	for(int i=8;i<16;i++)
+		free_register(i);
 }
 
 void label_objectcode(InterCode *p, FILE *fp)
@@ -311,32 +339,42 @@ void function_objectcode(InterCode *p, FILE *fp)
     {
         if(q->kind == ASSIGN)
         {
-            insert_operand(p->codeinfo.doubleop.op1);
-            insert_operand(p->codeinfo.doubleop.op2);
+            insert_operand(q->codeinfo.doubleop.op1);
+            insert_operand(q->codeinfo.doubleop.op2);
         }
         else if(q->kind == PLUS)
         {
-
+	    insert_operand(q->codeinfo.tripleop.op);
+	    insert_operand(q->codeinfo.tripleop.op1);
+            insert_operand(q->codeinfo.tripleop.op2);
+	    
         }
         else if(q->kind == SUB)
         {
-
+	    insert_operand(q->codeinfo.tripleop.op);
+	    insert_operand(q->codeinfo.tripleop.op1);
+            insert_operand(q->codeinfo.tripleop.op2);
         }
         else if(q->kind == MUL)
         {
-
+	    insert_operand(q->codeinfo.tripleop.op);
+	    insert_operand(q->codeinfo.tripleop.op1);
+            insert_operand(q->codeinfo.tripleop.op2);
         }
         else if(q->kind == DIV)
         {
-
+	    insert_operand(q->codeinfo.tripleop.op);
+	    insert_operand(q->codeinfo.tripleop.op1);
+            insert_operand(q->codeinfo.tripleop.op2);
         }
         else if(q->kind == RELOPGOTO)
         {
-
+	    insert_operand(q->codeinfo.relopgoto.x);
+	    insert_operand(q->codeinfo.relopgoto.y);
         }
         else if(q->kind == RETURN)
         {
-
+	    insert_operand(q->codeinfo.singleop.op);
         }
         else if(q->kind == DEC)
         {
@@ -348,19 +386,19 @@ void function_objectcode(InterCode *p, FILE *fp)
         }
         else if(q->kind == ARG)
         {
-            
+	    insert_operand(q->codeinfo.singleop.op);
         }
         else if(q->kind == CALL)
         {
-            
+            insert_operand(q->codeinfo.doubleop.op1);
         }
         else if(q->kind == READ)
         {
-
+	    insert_operand(q->codeinfo.singleop.op);
         }
         else if(q->kind == WRITE)
         {
-
+	    insert_operand(q->codeinfo.singleop.op);
         }
     }
     //assign stack space for these variables
@@ -399,22 +437,90 @@ void assgin_objectcode(InterCode *p, FILE *fp)
 
 void plus_objectcode(InterCode *p, FILE *fp)
 {
-
+	if(p->codeinfo.tripleop.op->kind == TEMP_VARIABLE || p->codeinfo.tripleop.op->kind == VARIABLE)
+	{
+		int rightreg1=assgin_register();
+		read_from_memory(rightreg, p->codeinfo.tripleop.op1, fp);
+		int rightreg2=assgin_register();
+		read_from_memory(rightreg, p->codeinfo.tripleop.op2, fp);
+		int leftreg = assgin_register();
+        	read_from_memory(leftreg, p->codeinfo.tripleop.op, fp);
+		fprintf(fp, "add %s, %s, %s\n",regs[leftreg].register_name,regs[rightreg1].register_name,regs[rightreg2].register_name);
+		fprintf(fp, "sw %s, %d($fp)\n", regs[leftreg].register_name, regs[leftreg].vardescripter->offset);
+        	free_register(leftreg);
+        	free_register(rightreg1);
+		free_register(rightreg2);
+	}
+	else
+	{
+		printf("unhandled situation at plus_objectcode, left operand type: %d\n", p->codeinfo.tripleop.op->kind);
+	}
 }
 
 void sub_objectcode(InterCode *p, FILE *fp)
 {
-
+	if(p->codeinfo.tripleop.op->kind == TEMP_VARIABLE || p->codeinfo.tripleop.op->kind == VARIABLE)
+	{
+		int rightreg1=assgin_register();
+		read_from_memory(rightreg, p->codeinfo.tripleop.op1, fp);
+		int rightreg2=assgin_register();
+		read_from_memory(rightreg, p->codeinfo.tripleop.op2, fp);
+		int leftreg = assgin_register();
+        	read_from_memory(leftreg, p->codeinfo.tripleop.op, fp);
+		fprintf(fp, "sub %s, %s, %s\n",regs[leftreg].register_name,regs[rightreg1].register_name,regs[rightreg2].register_name);
+		fprintf(fp, "sw %s, %d($fp)\n", regs[leftreg].register_name, regs[leftreg].vardescripter->offset);
+        	free_register(leftreg);
+        	free_register(rightreg1);
+		free_register(rightreg2);
+	}
+	else
+	{
+		printf("unhandled situation at sub_objectcode, left operand type: %d\n", p->codeinfo.tripleop.op->kind);
+	}
 }
 
 void mul_objectcode(InterCode *p, FILE *fp)
 {
-
+	if(p->codeinfo.tripleop.op->kind == TEMP_VARIABLE || p->codeinfo.tripleop.op->kind == VARIABLE)
+	{
+		int rightreg1=assgin_register();
+		read_from_memory(rightreg, p->codeinfo.tripleop.op1, fp);
+		int rightreg2=assgin_register();
+		read_from_memory(rightreg, p->codeinfo.tripleop.op2, fp);
+		int leftreg = assgin_register();
+        	read_from_memory(leftreg, p->codeinfo.tripleop.op, fp);
+		fprintf(fp, "mul %s, %s, %s\n",regs[leftreg].register_name,regs[rightreg1].register_name,regs[rightreg2].register_name);
+		fprintf(fp, "sw %s, %d($fp)\n", regs[leftreg].register_name, regs[leftreg].vardescripter->offset);
+        	free_register(leftreg);
+        	free_register(rightreg1);
+		free_register(rightreg2);
+	}
+	else
+	{
+		printf("unhandled situation at mul_objectcode, left operand type: %d\n", p->codeinfo.tripleop.op->kind);
+	}
 }
 
 void div_objectcode(InterCode *p, FILE *fp)
 {
-
+	if(p->codeinfo.tripleop.op->kind == TEMP_VARIABLE || p->codeinfo.tripleop.op->kind == VARIABLE)
+	{
+		int rightreg1=assgin_register();
+		read_from_memory(rightreg, p->codeinfo.tripleop.op1, fp);
+		int rightreg2=assgin_register();
+		read_from_memory(rightreg, p->codeinfo.tripleop.op2, fp);
+		int leftreg = assgin_register();
+        	read_from_memory(leftreg, p->codeinfo.tripleop.op, fp);
+		fprintf(fp, "div %s, %s, %s\n",regs[leftreg].register_name,regs[rightreg1].register_name,regs[rightreg2].register_name);
+		fprintf(fp, "sw %s, %d($fp)\n", regs[leftreg].register_name, regs[leftreg].vardescripter->offset);
+        	free_register(leftreg);
+        	free_register(rightreg1);
+		free_register(rightreg2);
+	}
+	else
+	{
+		printf("unhandled situation at div_objectcode, left operand type: %d\n", p->codeinfo.tripleop.op->kind);
+	}
 }
 
 void goto_objectcode(InterCode *p, FILE *fp)
