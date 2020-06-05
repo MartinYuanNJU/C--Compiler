@@ -422,7 +422,17 @@ void label_objectcode(InterCode *p, FILE *fp)
 void function_objectcode(InterCode *p, FILE *fp)
 {
     // printf("in function_obj\n");
-    fprintf(fp, "\n%s:\n", p->codeinfo.singleop.op->opinfo.contents);
+    char funcname[50];
+    if(strcmp(p->codeinfo.singleop.op->opinfo.contents, "main") == 0)
+    {
+        strcpy(funcname, "main");
+    }
+    else
+    {
+        strcpy(funcname, "func_");
+        strcat(funcname, p->codeinfo.singleop.op->opinfo.contents);
+    }
+    fprintf(fp, "\n%s:\n", funcname);
 
     //clear_vardescripter(vardeshead);
     //vardeshead = NULL;
@@ -690,7 +700,7 @@ void return_objectcode(InterCode *p, FILE *fp)
     fprintf(fp, "move $sp, $fp\n");
     //get the reg of the return value (here has old $fp)
     int regid = assgin_register();
-    read_from_memory(regid, p->codeinfo.doubleop.op1, fp);
+    read_from_memory(regid, p->codeinfo.singleop.op, fp);
     //recover $fp value;
     fprintf(fp, "lw $fp, -8($fp)\n");
     //get return value into $v0
@@ -728,12 +738,22 @@ void call_objectcode(InterCode *p, FILE *fp)
     // fprintf(fp, "move $fp, $sp\n");
     // fprintf(fp, "addi $fp, $fp, 8\n");
 
-    int leftreg = assgin_register();
-    int rightreg = assgin_register();
-    fprintf(fp, "jal %s\n", p->codeinfo.doubleop.op2->opinfo.contents);
+    char funcname[50];
+    if(strcmp(p->codeinfo.doubleop.op2->opinfo.contents, "main") == 0)
+    {
+        strcpy(funcname, "main");
+    }
+    else
+    {
+        strcpy(funcname, "func_");
+        strcat(funcname, p->codeinfo.doubleop.op2->opinfo.contents);
+    }
+    fprintf(fp, "jal %s\n", funcname);
     int regid = assgin_register();
     read_from_memory(regid, p->codeinfo.doubleop.op1, fp);
     fprintf(fp, "move %s, $v0\n", regs[regid].register_name);
+    fprintf(fp, "sw %s, %d($fp)\n", regs[regid].register_name, regs[regid].vardescripter->offset);
+    free_register(regid);
     argnum *= 4;
     fprintf(fp, "addi $sp, $sp, %d\n", argnum);
     argnum = 0;
