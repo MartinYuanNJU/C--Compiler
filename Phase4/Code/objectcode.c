@@ -32,8 +32,6 @@ void printOperand_commandlineenter(Operand *op)
 
 void printIntercode_commandline(InterCode *p)
 {
-    // for(InterCode *p=head; p!=NULL; p=p->next)
-    // {
         if(p->kind == LABEL_IC)
             printf("LABEL %s :", p->codeinfo.singleop.op->opinfo.contents);
         else if(p->kind == FUNCTION_IC)
@@ -128,7 +126,6 @@ void printIntercode_commandline(InterCode *p)
             printOperand_commandline(p->codeinfo.singleop.op);
         }
         printf("\n");
-    // }
 }
 
 //supplement tool function
@@ -298,26 +295,16 @@ void insert_vardescripter(VariableDescripter *vardescripter)
 
 void insert_operand(Operand *operand)
 {
-    // printOperand_commandlineenter(operand);
     if(operand->kind == CONSTANT || operand->kind == VARIABLE_CONSTANT)
         return;
-    // printf("hahahaha\n");
-    // printOperand_commandlineenter(operand);
     VariableDescripter *vardescripter = getvardescripter(operand);
     if(vardescripter != NULL)
-    {
-        // printf("not null\n");
         return;
-    }
-    // printf("hahahaha\n");
-    // printOperand_commandlineenter(operand);
     VariableDescripter *vd = (VariableDescripter*)malloc(sizeof(VariableDescripter));
     vd->operand = copyOperand(operand);
     variable_offset -= 4;
     vd->offset = variable_offset + OFFSET_CORRECT;
     insert_vardescripter(vd);
-    // printf("hahahaha\n");
-    // printOperand_commandlineenter(operand);
 }
 
 void clear_vardescripter()
@@ -351,8 +338,6 @@ VariableDescripter* getvardescripter(Operand *operand)
         return NULL;
     for(VariableDescripter *p=vardeshead; p!=NULL; p=p->next)
     {
-        // printf("in search\n");
-        // printOperand_commandlineenter(p->operand);
         if(p->operand->kind != CONSTANT && p->operand->kind != VARIABLE_CONSTANT)
         {
             if(strcmp(operand->opinfo.contents, p->operand->opinfo.contents) == 0)
@@ -383,10 +368,7 @@ void generate_objectcode(FILE *fp)
         if(p->kind == LABEL_IC)
             label_objectcode(p, fp);
         else if(p->kind == FUNCTION_IC)
-        {
             function_objectcode(p, fp);
-            // printIntercode_commandline(p);
-        }
         else if(p->kind == ASSIGN)
             assgin_objectcode(p, fp);
         else if(p->kind == PLUS)
@@ -421,7 +403,6 @@ void label_objectcode(InterCode *p, FILE *fp)
 
 void function_objectcode(InterCode *p, FILE *fp)
 {
-    // printf("in function_obj\n");
     char funcname[50];
     if(strcmp(p->codeinfo.singleop.op->opinfo.contents, "main") == 0)
     {
@@ -434,8 +415,6 @@ void function_objectcode(InterCode *p, FILE *fp)
     }
     fprintf(fp, "\n%s:\n", funcname);
 
-    //clear_vardescripter(vardeshead);
-    //vardeshead = NULL;
     clear_vardescripter();
 
     //save return address
@@ -459,16 +438,12 @@ void function_objectcode(InterCode *p, FILE *fp)
         insert_vardescripter(vd);
         paraoffset += 4;
     }
-    // printIntercode_commandline(q);
     for(; q != NULL && q->kind != FUNCTION_IC; q = q->next)
     {
         if(q->kind == ASSIGN)
         {
-            // printIntercode_commandline(q);
             insert_operand(q->codeinfo.doubleop.op1);
-            // printf("finish11111\n");
             insert_operand(q->codeinfo.doubleop.op2);
-            // printf("finish\n");
         }
         else if(q->kind == PLUS)
         {
@@ -530,7 +505,6 @@ void function_objectcode(InterCode *p, FILE *fp)
     }
     //assign stack space for these variables
     fprintf(fp, "addi $sp, $sp, %d\n", variable_offset);
-    // printf("out function_obj\n");
 }
 
 void assgin_objectcode(InterCode *p, FILE *fp)
@@ -565,8 +539,6 @@ void assgin_objectcode(InterCode *p, FILE *fp)
 
 void plus_objectcode(InterCode *p, FILE *fp)
 {
-	if(p->codeinfo.tripleop.op->kind == TEMP_VARIABLE || p->codeinfo.tripleop.op->kind == VARIABLE)
-	{
 		int rightreg1=assgin_register();
 		read_from_memory(rightreg1, p->codeinfo.tripleop.op1, fp);
 		int rightreg2=assgin_register();
@@ -578,17 +550,10 @@ void plus_objectcode(InterCode *p, FILE *fp)
         free_register(leftreg);
         free_register(rightreg1);
 		free_register(rightreg2);
-	}
-	else
-	{
-		printf("unhandled situation at plus_objectcode, left operand type: %d\n", p->codeinfo.tripleop.op->kind);
-	}
 }
 
 void sub_objectcode(InterCode *p, FILE *fp)
 {
-	if(p->codeinfo.tripleop.op->kind == TEMP_VARIABLE || p->codeinfo.tripleop.op->kind == VARIABLE)
-	{
 		int rightreg1=assgin_register();
 		read_from_memory(rightreg1, p->codeinfo.tripleop.op1, fp);
 		int rightreg2=assgin_register();
@@ -600,17 +565,10 @@ void sub_objectcode(InterCode *p, FILE *fp)
         free_register(leftreg);
         free_register(rightreg1);
 		free_register(rightreg2);
-	}
-	else
-	{
-		printf("unhandled situation at sub_objectcode, left operand type: %d\n", p->codeinfo.tripleop.op->kind);
-	}
 }
 
 void mul_objectcode(InterCode *p, FILE *fp)
 {
-	if(p->codeinfo.tripleop.op->kind == TEMP_VARIABLE || p->codeinfo.tripleop.op->kind == VARIABLE)
-	{
 		int rightreg1=assgin_register();
 		read_from_memory(rightreg1, p->codeinfo.tripleop.op1, fp);
 		int rightreg2=assgin_register();
@@ -622,17 +580,10 @@ void mul_objectcode(InterCode *p, FILE *fp)
         free_register(leftreg);
         free_register(rightreg1);
 		free_register(rightreg2);
-	}
-	else
-	{
-		printf("unhandled situation at mul_objectcode, left operand type: %d\n", p->codeinfo.tripleop.op->kind);
-	}
 }
 
 void div_objectcode(InterCode *p, FILE *fp)
 {
-	if(p->codeinfo.tripleop.op->kind == TEMP_VARIABLE || p->codeinfo.tripleop.op->kind == VARIABLE)
-	{
 		int rightreg1=assgin_register();
 		read_from_memory(rightreg1, p->codeinfo.tripleop.op1, fp);
 		int rightreg2=assgin_register();
@@ -644,11 +595,6 @@ void div_objectcode(InterCode *p, FILE *fp)
         free_register(leftreg);
         free_register(rightreg1);
 		free_register(rightreg2);
-	}
-	else
-	{
-		printf("unhandled situation at div_objectcode, left operand type: %d\n", p->codeinfo.tripleop.op->kind);
-	}
 }
 
 void goto_objectcode(InterCode *p, FILE *fp)
@@ -728,16 +674,6 @@ void arg_objectcode(InterCode *p, FILE *fp)
 
 void call_objectcode(InterCode *p, FILE *fp)
 {
-    // //save return address
-    // fprintf(fp, "addi $sp, $sp, -4\n");
-    // fprintf(fp, "sw $ra, 0($sp)\n");
-    // //save this function's fp
-    // fprintf(fp, "addi $sp, $sp, -4\n");
-    // fprintf(fp, "sw $fp, 0($sp)\n");
-    // //make fp points to new stack frame
-    // fprintf(fp, "move $fp, $sp\n");
-    // fprintf(fp, "addi $fp, $fp, 8\n");
-
     char funcname[50];
     if(strcmp(p->codeinfo.doubleop.op2->opinfo.contents, "main") == 0)
     {
@@ -765,7 +701,7 @@ void read_objectcode(InterCode *p, FILE *fp)
 	fprintf(fp, "sw $ra, 0($sp)\n");
 	fprintf(fp, "jal read\n");
 	fprintf(fp, "lw $ra, 0($sp)\n");
-	fprintf(fp, "addi $sp, $sp, -4\n");
+	fprintf(fp, "addi $sp, $sp, 4\n");
 	int res = assgin_register();
     read_from_memory(res, p->codeinfo.singleop.op, fp);
 	fprintf(fp, "move %s, $v0\n",regs[res].register_name);
@@ -782,6 +718,6 @@ void write_objectcode(InterCode *p, FILE *fp)
 	fprintf(fp, "sw $ra, 0($sp)\n");
 	fprintf(fp, "jal write\n");
 	fprintf(fp, "lw $ra, 0($sp)\n");
-	fprintf(fp, "addi $sp, $sp, -4\n");
+	fprintf(fp, "addi $sp, $sp, 4\n");
 	free_register(res);
 }

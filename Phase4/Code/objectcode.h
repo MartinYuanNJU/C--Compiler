@@ -35,7 +35,6 @@ void printdata(FILE *fp);
 void initialize_register();
 int assgin_register();
 void read_from_memory(int reg_id, Operand *operand, FILE *fp);
-//void write_to_memory(int reg_id);
 void free_register(int reg_id);
 void freeall_register();
 void insert_vardescripter(VariableDescripter *vardescripter);
