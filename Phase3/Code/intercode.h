@@ -117,7 +117,6 @@ void insertparalist(char name[33]);
 int structisparameter(char name[33]);
 void clearparalist();
 void printOperand(Operand *op, FILE *fp);
-void PrintOperand(Operand *op);
 void printIntercode(InterCode *head, FILE *fp);
 void deleteintercode(InterCode *intercode);
 void insertduplablelist(char name[33]);

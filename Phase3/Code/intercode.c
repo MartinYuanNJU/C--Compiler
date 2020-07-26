@@ -3,7 +3,7 @@
 extern int errorsum;
 int printnode_intercode = 0;
 
-int openvc = 0;
+int openvc = 1;
 
 int whilecond;
 int whilestmt;
@@ -323,23 +323,11 @@ void printOperand(Operand *op, FILE *fp)
     if(op->kind == CONSTANT || op->kind == VARIABLE_CONSTANT)
         fprintf(fp, "#%d",op->opinfo.constant_value);
     else if(op->kind == TEMP_ADDRESS || op->kind == ADDRESS)
-        fprintf(fp,"&%s",op->opinfo.contents);
+        fprintf(fp, "&%s",op->opinfo.contents);
     else if(op->kind == STAR)
         fprintf(fp, "*%s",op->opinfo.contents);
     else
         fprintf(fp, "%s",op->opinfo.contents);
-}
-
-void PrintOperand(Operand *op)
-{
-    if(op->kind == CONSTANT || op->kind == VARIABLE_CONSTANT)
-        printf( "#%d",op->opinfo.constant_value);
-    else if(op->kind == TEMP_ADDRESS || op->kind == ADDRESS)
-        printf("&%s",op->opinfo.contents);
-    else if(op->kind == STAR)
-        printf( "*%s",op->opinfo.contents);
-    else
-        printf( "%s",op->opinfo.contents);
 }
 
 void printIntercode(InterCode *head, FILE *fp)
@@ -444,7 +432,7 @@ void printIntercode(InterCode *head, FILE *fp)
 }
 
 //generating intercode
-void generate_intercode(TreeNode *root, FILE *fp)
+void generate_intercode(TreeNode *root)
 {
     if(errorsum != 0)
         return;
@@ -455,7 +443,7 @@ void generate_intercode(TreeNode *root, FILE *fp)
 	if(errorsum == 0)
     {
         optimize_intercode();
-        printIntercode(listhead, fp);
+        //printIntercode(listhead, fp);
     }
 }
 
@@ -1704,6 +1692,39 @@ void callfunc_intercode(TreeNode *p, Operand *op)
         printf("leave callfunc_intercode\n");
 
 }
+
+// Args* arg_intercode(TreeNode *p)
+// {
+// 	if(printnode_intercode == 1)
+//         printf("enter arg_intercode\n");
+// 	Args *args = NULL;
+//     TreeNode *q = p;
+// 	while(q->childrennum > 1) //Exp COMMA Args
+// 	{
+// 		Operand *tempvar = newOperand(TEMP_VARIABLE);
+// 		exp_intercode(q->children[0],tempvar);
+// 		TypeInfo *type = Exp(q->children[0]);
+// 		if(type->kind == STRUCT)
+// 			tempvar->kind = ADDRESS;
+// 		Args *arg=(Args*)malloc(sizeof(Args));
+// 		arg->one_arg=tempvar;
+// 		arg->next=args;
+// 		args=arg;
+// 		q = q->children[2];
+// 	}
+// 	Operand *tempvar = newOperand(TEMP_VARIABLE);
+// 	exp_intercode(q->children[0],tempvar);
+// 	TypeInfo *type = Exp(q->children[0]);
+// 	if(type->kind == STRUCT)
+// 		tempvar->kind=ADDRESS;
+// 	Args *arg = (Args*)malloc(sizeof(Args));
+// 	arg->one_arg = tempvar;
+// 	arg->next = args;
+// 	args = arg;
+//     if(printnode_intercode == 1)
+//         printf("leave arg_intercode\n");
+// 	return args;
+// }
 
 Args* arg_intercode(TreeNode *p)
 {
